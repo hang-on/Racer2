@@ -1,0 +1,59 @@
+2 colors, black and white
+6 tiles converted, incl. mirroring.
+Titlescreen: 218 tiles converted, 6 colors
+
+Racetrack_1_1,
+6o tiles conceverted, 11 colors, 32x28 nametable
+
+
+A very simple, carefree implementation which doesn't support clipping would be this:
+
+/* 
+   metasprite format: 
+
+   signed char metasprite [] = { 
+      xoffset1, yoffset1, tile1, 
+      xoffset2, yoffset2, tile2, 
+      ... 
+      127 
+   }; 
+*/ 
+
+signed char meta_x; 
+_Bool SMS_addMetaSprite (unsigned char x, unsigned char y, signed char *metasprite) { 
+   while ((meta_x = *metasprite ++) != 0x7f) { 
+      if (SpriteNextFree < MAXSPRITES) { 
+         SpriteTableY [SpriteNextFree] = y + *metasprite ++; 
+         SpriteTableXN [SpriteNextFree << 1] = x + meta_x; 
+         SpriteTableXN [(SpriteNextFree << 1) + 1] = *metasprite ++; 
+         SpriteNextFree ++; 
+      } else return (false); 
+   } 
+   return (true); 
+} 
+
+signed char metasprite [] = {
+   -4, -8, 0,
+   4, -8, 1,
+   -4, 0, 2,
+   4, 0, 3,
+   127
+};
+
+1.
+GET MetaSpriteY
+GET correct offset
+APPLY offset to MetaSpriteY
+SAVE result
+
+2.
+POINT to correct byte in SpriteBufferY
+GET offset MetaSpriteY
+WRITE offset MetaSpriteY to the SpriteBufferY
+
+
+1325  cel1
+130c  cel0
+2513
+
+133e  cel2!  
