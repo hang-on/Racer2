@@ -337,6 +337,8 @@ UpdateCar:
    ld de,16              ; Fast forward the meta sprite data pointer, so we
    add hl,de             ; can read the buffer index.
    ld a,(hl)             ; Read buffer index (0-2) into A.
+   ld a,(ix+5)
+
    rla                   ; Use buffer index to calculate where to put the
    rla                   ; first of the offset y-position bytes.
    rla                   ; Start address = 8 x buffer index + SpriteBufferY.
@@ -369,6 +371,8 @@ UpdateCar:
    push de               ; Save x and char on the stack.
    djnz -                ; Process all 8 XC pairs.
    ld a,(hl)             ; Get buffer index (0-2).
+   ld a,(ix+5)
+
    rla                   ; Calculate address of first x position, using the
    rla                   ; formula: Buffer index * 2 * 8.
    rla
