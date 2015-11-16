@@ -334,10 +334,9 @@ UpdateCar:
    ld e,a                ; Save this offet y-position in E
    push de               ; Push the two offset y-positions to the stack.
    djnz -                ; Perform all 4 loops, then continue...
-   ld de,16              ; Fast forward the meta sprite data pointer, so we
-   add hl,de             ; can read the buffer index.
-   ld a,(hl)             ; Read buffer index (0-2) into A.
-   ld a,(ix+5)
+   ld de,16              ; ....
+   add hl,de             ; .... pure mystery.
+   ld a,(ix+5)           ; Get the buffer index.
 
    rla                   ; Use buffer index to calculate where to put the
    rla                   ; first of the offset y-position bytes.
@@ -370,9 +369,7 @@ UpdateCar:
    ld d,a                ; Save character code in D.
    push de               ; Save x and char on the stack.
    djnz -                ; Process all 8 XC pairs.
-   ld a,(hl)             ; Get buffer index (0-2).
-   ld a,(ix+5)
-
+   ld a,(ix+5)           ; Get buffer index.
    rla                   ; Calculate address of first x position, using the
    rla                   ; formula: Buffer index * 2 * 8.
    rla
@@ -450,7 +447,7 @@ InitializeEnemies:
    ld (May.y),a
    ld a,MAY_X_START
    ld (May.x),a
-   ld hl,MayCel0
+   ld hl,AshCel0
    ld (May.metasprite),hl
    ld a,2
    ld (May.index),a
@@ -458,7 +455,7 @@ InitializeEnemies:
    ld (Iris.y),a
    ld a,IRIS_X_START
    ld (Iris.x),a
-   ld hl,IrisCel0
+   ld hl,AshCel0
    ld (Iris.metasprite),hl
    ld a,3
    ld (Iris.index),a
@@ -541,11 +538,11 @@ AnimateEnemies:
    ld hl,Ash.metasprite
    call AnimateCar
    ld ix,May
-   ld bc,MayCelTable
+   ld bc,AshCelTable
    ld hl,May.metasprite
    call AnimateCar
    ld ix,Iris
-   ld bc,IrisCelTable
+   ld bc,AshCelTable
    ld hl,Iris.metasprite
    call AnimateCar
    ret
@@ -617,15 +614,12 @@ LoadSAT:
 PlayerCel0:
    .db 0 0 0 0 16 16 16 16 ; Y-offset.
    .db 0 64 8 66 16 68 24 70 0 72 8 74 16 76 24 78 ; X-offset + char pairs.
-   .db 0                 ; Sprite buffer index.
 PlayerCel1:
    .db 0 0 0 0 16 16 16 16
    .db 0 88 8 66 16 68 24 90 0 92 8 74 16 76 24 94
-   .db 0
 PlayerCel2:
    .db 0 0 0 0 16 16 16 16
    .db 0 80 8 66 16 68 24 82 0 84 8 74 16 76 24 86
-   .db 0
 PlayerCelTable:
    .dw PlayerCel0
    .dw PlayerCel1
@@ -635,51 +629,16 @@ PlayerCelTable:
 AshCel0:
    .db 0 0 0 0 16 16 16 16
    .db 0 32 8 34 16 36 24 38 0 40 8 42 16 44 24 46
-   .db 1
 AshCel1:
    .db 0 0 0 0 16 16 16 16
    .db 0 56 8 34 16 36 24 58 0 60 8 42 16 44 24 62
-   .db 1
 AshCel2:
    .db 0 0 0 0 16 16 16 16
    .db 0 48 8 34 16 36 24 50 0 52 8 42 16 44 24 54
-   .db 1
 AshCelTable:
    .dw AshCel0
    .dw AshCel1
    .dw AshCel2
-MayCel0:
-   .db 0 0 0 0 16 16 16 16
-   .db 0 32 8 34 16 36 24 38 0 40 8 42 16 44 24 46
-   .db 2
-MayCel1:
-   .db 0 0 0 0 16 16 16 16
-   .db 0 56 8 34 16 36 24 58 0 60 8 42 16 44 24 62
-   .db 2
-MayCel2:
-   .db 0 0 0 0 16 16 16 16
-   .db 0 48 8 34 16 36 24 50 0 52 8 42 16 44 24 54
-   .db 2
-MayCelTable:
-   .dw MayCel0
-   .dw MayCel1
-   .dw MayCel2
-IrisCel0:
-   .db 0 0 0 0 16 16 16 16
-   .db 0 32 8 34 16 36 24 38 0 40 8 42 16 44 24 46
-   .db 3
-IrisCel1:
-   .db 0 0 0 0 16 16 16 16
-   .db 0 56 8 34 16 36 24 58 0 60 8 42 16 44 24 62
-   .db 3
-IrisCel2:
-   .db 0 0 0 0 16 16 16 16
-   .db 0 48 8 34 16 36 24 50 0 52 8 42 16 44 24 54
-   .db 3
-IrisCelTable:
-   .dw IrisCel0
-   .dw IrisCel1
-   .dw IrisCel2
 RespawnTable:
    .db 20 40 60 80 100 120 140 150
    .db 25 43 63 83 92 102 119 145
