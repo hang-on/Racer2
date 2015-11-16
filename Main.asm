@@ -113,6 +113,7 @@ rst $20
    PlayerX db
    PlayerMetaSpriteDataPointer dw ; Pointer to metasprite data.
    PlayerCel db
+   PlayerIndex db
    Ash INSTANCEOF EnemyObject
    May INSTANCEOF EnemyObject
    Iris INSTANCEOF EnemyObject
