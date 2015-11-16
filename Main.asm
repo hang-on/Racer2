@@ -439,18 +439,24 @@ InitializeEnemies:
    ld (Ash.x),a
    ld hl,AshCel0
    ld (Ash.metasprite),hl
+   ld a,1
+   ld (Ash.index),a
    ld a,MAY_Y_START
    ld (May.y),a
    ld a,MAY_X_START
    ld (May.x),a
    ld hl,MayCel0
    ld (May.metasprite),hl
+   ld a,2
+   ld (May.index),a
    ld a,IRIS_Y_START
    ld (Iris.y),a
    ld a,IRIS_X_START
    ld (Iris.x),a
    ld hl,IrisCel0
    ld (Iris.metasprite),hl
+   ld a,3
+   ld (Iris.index),a
    ld ix,Ash
    call UpdateCar
    ld ix,May
