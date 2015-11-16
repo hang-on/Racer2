@@ -93,6 +93,7 @@ rst $20
    x db
    metasprite dw
    cel db
+   index db
    movement db
 .endst
 ; =============================================================================
@@ -470,7 +471,7 @@ MoveEnemyVertically:
    call ResetEnemy
    ret
 MoveEnemyHorizontally:
-   ld a,(ix+5)           ; Get direction
+   ld a,(ix+6)           ; Get direction
    cp GOING_RIGHT
    jp nz,+
    call MoveEnemyRight
@@ -500,15 +501,15 @@ MoveEnemyLeft:
    ld (ix+1),a
    ret
 ToggleEnemyDirection:
-   ld a,(ix+5)           ; Get enemy direction.
+   ld a,(ix+6)           ; Get enemy direction.
    cp GOING_LEFT
    jp nz,+
    ld a,GOING_RIGHT
-   ld (ix+5),a
+   ld (ix+6),a
    ret
 +:
    ld a,GOING_LEFT
-   ld (ix+5),a
+   ld (ix+6),a
    ret
 ResetEnemy:
    call GetRandomNumber
@@ -521,7 +522,7 @@ ResetEnemy:
    ld (ix+1),a           ; Enemy's x-position.
    call GetRandomNumber
    and EASY_MODE_MASK    ; Will the car move r/l, or just straight down?
-   ld (ix+5),a
+   ld (ix+6),a
    ret
 AnimateEnemies:
    ld ix,Ash
