@@ -68,7 +68,7 @@ rst $20
 .define    PLAYER_Y_START 135
 .define    FIRST_PLAYER_TILE $2800
 .define    PLAYER_METASPRITE_SIZE 32*32
-
+.define    PLAYER_HITCOUNTER_MAX 7
 ; Enemy values
 .define    ASH_X_START 76
 .define    ASH_Y_START 1
@@ -119,6 +119,7 @@ rst $20
    PlayerMetaSpriteDataPointer dw ; Pointer to metasprite data.
    PlayerCel db
    PlayerIndex db
+   PlayerHitCounter db
    Ash INSTANCEOF EnemyObject
    May INSTANCEOF EnemyObject
    Iris INSTANCEOF EnemyObject
@@ -259,7 +260,7 @@ MainLoop:
    ld b,VDP_VERTICAL_SCROLL_REGISTER
    call SetRegister
    call Housekeeping
-   ;call DetectCollision  ; Set CollisionFlag if two hardware sprites overlap.
+   call DetectCollision  ; Set CollisionFlag if two hardware sprites overlap.
    call HandleEnemyScript
    call HandleGameModeCounter
    call MovePlayer
@@ -319,7 +320,15 @@ AnimateCar:
 DetectCollision:
    ld a,(VDPStatus)      ; Check for sprite collision.
    bit SPRITE_COLLISION_BIT,a
-   ret z
+   jp nz,+
+   xor a
+   ld (PlayerHitCounter),a
++:
+   ld a,(PlayerHitCounter)
+   inc a
+   ld (PlayerHitCounter),a
+   cp PLAYER_HITCOUNTER_MAX
+   ret nz
    ld a,FLAG_UP
    ld (CollisionFlag),a
    ret                   ; Return from main loop.
