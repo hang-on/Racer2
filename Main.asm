@@ -89,12 +89,12 @@ rst $20
 .define    HARD_MODE_MASK %00000011
 
 .struct EnemyObject
-   y db
-   x db
-   metasprite dw
-   cel db
-   index db
-   movement db
+   y db                  ; 0
+   x db                  ; 1
+   metasprite dw         ; 2
+   cel db                ; 4
+   index db              ; 5
+   movement db           ; 6
 .endst
 ; =============================================================================
 ; V A R I A B L E S
@@ -318,6 +318,10 @@ UpdateSATBuffers:
    call UpdateCar
    ret
 UpdateCar:
+   call HandleY_Alternative
+   call HandleXC
+   ret
+HandleY:
    ld b,4                ; 4 loops, each  loop calculating 2 y-positions.
    ld a,(ix+0)           ; Get the car's y-position.
    ld c,a                ; Save it in register C.
@@ -334,10 +338,10 @@ UpdateCar:
    ld e,a                ; Save this offet y-position in E
    push de               ; Push the two offset y-positions to the stack.
    djnz -                ; Perform all 4 loops, then continue...
-   ld de,16              ; ....
-   add hl,de             ; .... pure mystery.
-   ld a,(ix+5)           ; Get the buffer index.
+   ;ld de,16              ; ....
+   ;add hl,de             ; .... pure mystery.
 
+   ld a,(ix+5)           ; Get the buffer index.
    rla                   ; Use buffer index to calculate where to put the
    rla                   ; first of the offset y-position bytes.
    rla                   ; Start address = 8 x buffer index + SpriteBufferY.
@@ -351,6 +355,37 @@ UpdateCar:
    ld bc,$0008           ; Let's move these 8 bytes from the stack to the
    ldir                  ; buffer.
    ld sp,hl              ; Restore the stack pointer. Beware of NMI!!
+   ret
+
+HandleY_Alternative:
+   ; setup the sprite buffer for recieveing
+   ld hl,SpriteBufferY
+   ld a,(ix+5)
+   add a,a               ; 8 x index
+   add a,a
+   add a,a
+   ld d,0
+   ld e,a
+   add hl,de
+   ex de,hl              ; de is pointing to first y pos in buffer
+
+   ld b,8
+   ld a,(ix+0)           ; Get the car's y-position.
+   ld c,a                ; Save it in register C.
+   ld h,(ix+3)           ; Get the meta sprite data pointer,
+   ld l,(ix+2)           ; and store it in HL.
+-:
+   ld a,(hl)             ; Read offset.
+   add a,c               ; Apply saved y-position to offset.
+   ld (de),a
+   inc de
+   inc hl
+   djnz -                ; Perform all 4 loops, then continue...
+   ;ld de,16              ; ....
+   ;add hl,de             ; .... pure mystery.
+   ret
+
+HandleXC:
    ld b,8                ; This time we loop 8 times.
    ld a,(ix+1)           ; Get the car's x-position.
    ld c,a                ; Save it like above.
