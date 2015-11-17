@@ -87,6 +87,8 @@ rst $20
 .define    ENEMY_LEFT_BORDER 18
 .define    EASY_MODE_MASK %00000111
 .define    HARD_MODE_MASK %00000011
+.define    DISABLED 0
+.define    ENABLED 1
 
 .struct EnemyObject
    y db                  ; 0
@@ -95,6 +97,7 @@ rst $20
    cel db                ; 4
    index db              ; 5
    movement db           ; 6
+   status db
 .endst
 ; =============================================================================
 ; V A R I A B L E S
@@ -117,6 +120,7 @@ rst $20
    Ash INSTANCEOF EnemyObject
    May INSTANCEOF EnemyObject
    Iris INSTANCEOF EnemyObject
+   EnemyScript db
 .ends
 
 ; =============================================================================
@@ -249,7 +253,8 @@ MainLoop:
    ld b,VDP_VERTICAL_SCROLL_REGISTER
    call SetRegister
    call Housekeeping
-   ;call DetectCollision  ; Set CollisionFlag if two hardware sprites overlap.
+   call DetectCollision  ; Set CollisionFlag if two hardware sprites overlap.
+   call HandleEnemyScript
    call MovePlayer
    call MoveEnemies
    call ScrollRacetrack  ; Not the actual vdp register updating - see above.
@@ -260,14 +265,6 @@ MainLoop:
    cp FLAG_UP
    ret z
    jp MainLoop           ; Do it all again...
-MoveEnemies:
-   ld ix,Ash
-   call MoveEnemy
-   ld ix,May
-   call MoveEnemy
-   ld ix,Iris
-   call MoveEnemy
-   ret
 ScrollRacetrack:
    ld a,(Scroll)
    sub PLAYER_VERTICAL_SPEED
@@ -431,7 +428,7 @@ InitializeEnemies:
    ld (Ash.y),a
    ld a,ASH_X_START
    ld (Ash.x),a
-   ld hl,GreenCarCel0
+   ld hl,DisabledCar
    ld (Ash.metasprite),hl
    ld a,1
    ld (Ash.index),a
@@ -439,7 +436,7 @@ InitializeEnemies:
    ld (May.y),a
    ld a,MAY_X_START
    ld (May.x),a
-   ld hl,GreenCarCel0
+   ld hl,DisabledCar
    ld (May.metasprite),hl
    ld a,2
    ld (May.index),a
@@ -447,16 +444,35 @@ InitializeEnemies:
    ld (Iris.y),a
    ld a,IRIS_X_START
    ld (Iris.x),a
-   ld hl,GreenCarCel0
+   ld hl,DisabledCar
    ld (Iris.metasprite),hl
    ld a,3
    ld (Iris.index),a
+   ld a,255
+   ld (EnemyScript),a
+   ret
+HandleEnemyScript:
+   ld a,(EnemyScript)
+   cp 0
+   ret z
+   dec a
+   ld (EnemyScript),a
+   ld a,(EnemyScript)
+   cp 150
+   jp nz,+
+   ld hl,GreenCarCel0
+   ld (Ash.metasprite),hl
+   ld a,ENABLED
+   ld (Ash.status),a
++:
+   ret
+MoveEnemies:
    ld ix,Ash
-   call UpdateCar
+   call MoveEnemy
    ld ix,May
-   call UpdateCar
+   call MoveEnemy
    ld ix,Iris
-   call UpdateCar
+   call MoveEnemy
    ret
 MoveEnemy:
    call MoveEnemyVertically
@@ -525,18 +541,30 @@ ResetEnemy:
    ld (ix+6),a
    ret
 AnimateEnemies:
+   ld a,(Ash.status)
+   cp 0
+   jp z,+
    ld ix,Ash
    ld bc,AshCelTable
    ld hl,Ash.metasprite
    call AnimateCar
++:
+   ld a,(May.status)
+   cp 0
+   jp z,+
    ld ix,May
    ld bc,AshCelTable
    ld hl,May.metasprite
    call AnimateCar
++:
+   ld a,(Iris.status)
+   cp 0
+   jp z,+
    ld ix,Iris
    ld bc,AshCelTable
    ld hl,Iris.metasprite
    call AnimateCar
++:
    ret
 .ends
 ; ---------------------
@@ -618,6 +646,9 @@ PlayerCelTable:
    .dw PlayerCel2
 
 ; Enemies
+DisabledCar:
+   .db 0 0 0 0 0 0 0 0
+   .db 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0
 GreenCarCel0:
    .db 0 0 0 0 16 16 16 16
    .db 0 32 8 34 16 36 24 38 0 40 8 42 16 44 24 46
