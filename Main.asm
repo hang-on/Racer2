@@ -464,7 +464,25 @@ HandleEnemyScript:
    ld (Ash.metasprite),hl
    ld a,ENABLED
    ld (Ash.status),a
+   ret
 +:
+   cp 201
+   jp nz,+
+   ld hl,GreenCarCel0
+   ld (May.metasprite),hl
+   ld a,ENABLED
+   ld (May.status),a
+   ret
++:
+   cp 100
+   jp nz,+
+   ld hl,GreenCarCel0
+   ld (Iris.metasprite),hl
+   ld a,ENABLED
+   ld (Iris.status),a
+   ret
++:
+
    ret
 MoveEnemies:
    ld ix,Ash
