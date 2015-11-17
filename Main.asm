@@ -318,46 +318,10 @@ UpdateSATBuffers:
    call UpdateCar
    ret
 UpdateCar:
-   call HandleY_Alternative
-   call HandleXC_Alternative
+   call HandleY
+   call HandleXC
    ret
 HandleY:
-   ld b,4                ; 4 loops, each  loop calculating 2 y-positions.
-   ld a,(ix+0)           ; Get the car's y-position.
-   ld c,a                ; Save it in register C.
-   ld h,(ix+3)           ; Get the meta sprite data pointer,
-   ld l,(ix+2)           ; and store it in HL.
--:
-   ld a,(hl)             ; Read offset.
-   inc hl                ; Point HL to the next offset.
-   add a,c               ; Apply saved y-position to offset.
-   ld d,a                ; Save offset y-position in D.
-   ld a,(hl)             ; Get new offset.
-   inc hl                ; Point HL to next offset.
-   add a,c               ; Apply saved y-position to offset.
-   ld e,a                ; Save this offet y-position in E
-   push de               ; Push the two offset y-positions to the stack.
-   djnz -                ; Perform all 4 loops, then continue...
-   ;ld de,16              ; ....
-   ;add hl,de             ; .... pure mystery.
-
-   ld a,(ix+5)           ; Get the buffer index.
-   rla                   ; Use buffer index to calculate where to put the
-   rla                   ; first of the offset y-position bytes.
-   rla                   ; Start address = 8 x buffer index + SpriteBufferY.
-   ld h,0
-   ld l,a
-   ld de,SpriteBufferY
-   add hl,de
-   ex de,hl              ; Now DE points to the desired place in the buffer.
-   ld hl,0               ; Load the stack pointer into HL (because the
-   add hl,sp             ; y-positions are on the stack).
-   ld bc,$0008           ; Let's move these 8 bytes from the stack to the
-   ldir                  ; buffer.
-   ld sp,hl              ; Restore the stack pointer. Beware of NMI!!
-   ret
-
-HandleY_Alternative:
    ; setup the sprite buffer for recieveing
    ld hl,SpriteBufferY
    ld a,(ix+5)
@@ -381,47 +345,10 @@ HandleY_Alternative:
    inc de
    inc hl
    djnz -                ; Perform all 4 loops, then continue...
-   ;ld de,16              ; ....
-   ;add hl,de             ; .... pure mystery.
    ret
 
-HandleXC:
-   ld b,8                ; This time we loop 8 times.
-   ld a,(ix+1)           ; Get the car's x-position.
-   ld c,a                ; Save it like above.
-   ld h,(ix+3)           ; Get the meta sprite data pointer.
-   ld l,(ix+2)
-   ld d,0                ; Add 8 to the meta sprite data pointer, so that
-   ld e,8                ; we can skip past the y-offsets used in the
-   add hl,de             ; calculations above.
--:
-   ld a,(hl)             ; Read first x-offset.
-   inc hl                ; Forward data pointer.
-   add a,c               ; Apply car's x-position to the offset.
-   ld e,a                ; Save offset x-position in E.
-   ld a,(hl)             ; Read the character code (tile).
-   inc hl                ; Forward data pointer once more.
-   ld d,a                ; Save character code in D.
-   push de               ; Save x and char on the stack.
-   djnz -                ; Process all 8 XC pairs.
-   ld a,(ix+5)           ; Get buffer index.
-   rla                   ; Calculate address of first x position, using the
-   rla                   ; formula: Buffer index * 2 * 8.
-   rla
-   rla
-   ld h,0
-   ld l,a
-   ld de,SpriteBufferXC
-   add hl,de
-   ex de,hl              ; Now DE points to the correct place in the buffer.
-   ld hl,0               ; Load HL with the stack pointer.
-   add hl,sp
-   ld bc,$0010           ; Block move 16 bytes.
-   ldir                  ; Do it!
-   ld sp,hl              ; Restore the stack pointer.
-   ret                   ; Return from function UpdateCar.
 
-HandleXC_Alternative:
+HandleXC:
    ; adjust the meta sprite pointer
    ld h,(ix+3)           ; Get the meta sprite data pointer,
    ld l,(ix+2)           ; and store it in HL.
@@ -459,7 +386,6 @@ HandleXC_Alternative:
    inc hl
    djnz -                ; Perform all 8 loops, then continue...
    ret
-
 .ends
 ; ---------------------
 .section "The player" free
