@@ -319,7 +319,7 @@ UpdateSATBuffers:
    ret
 UpdateCar:
    call HandleY_Alternative
-   call HandleXC
+   call HandleXC_Alternative
    ret
 HandleY:
    ld b,4                ; 4 loops, each  loop calculating 2 y-positions.
@@ -420,6 +420,46 @@ HandleXC:
    ldir                  ; Do it!
    ld sp,hl              ; Restore the stack pointer.
    ret                   ; Return from function UpdateCar.
+
+HandleXC_Alternative:
+   ; adjust the meta sprite pointer
+   ld h,(ix+3)           ; Get the meta sprite data pointer,
+   ld l,(ix+2)           ; and store it in HL.
+   ld d,0
+   ld e,8
+   add hl,de ; skip the y-positions
+   push hl
+
+   ; setup the sprite buffer for recieveing
+   ld hl,SpriteBufferXC
+   ld a,(ix+5)
+   add a,a               ; 16 x index
+   add a,a
+   add a,a           ; ???
+   add a,a
+
+   ld d,0
+   ld e,a
+   add hl,de
+   ex de,hl              ; de is pointing to first x pos in buffer
+
+   ld b,8
+   ld a,(ix+1)           ; Get the car's x-position.
+   ld c,a                ; Save it in register C.
+   pop hl
+-:
+   ld a,(hl)             ; Read offset.
+   add a,c               ; Apply saved x-position to offset.
+   ld (de),a
+   inc de
+   inc hl
+   ld a,(hl) ; get char code
+   ld (de),a ; save in buffer
+   inc de
+   inc hl
+   djnz -                ; Perform all 8 loops, then continue...
+   ret
+
 .ends
 ; ---------------------
 .section "The player" free
