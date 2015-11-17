@@ -450,6 +450,10 @@ InitializeEnemies:
    ld (Iris.index),a
    ld a,255
    ld (EnemyScript),a
+   xor a
+   ld (Ash.status),a
+   ld (May.status),a
+   ld (Iris.status),a
    ret
 HandleEnemyScript:
    ld a,(EnemyScript)
@@ -475,14 +479,11 @@ HandleEnemyScript:
    ret
 +:
    cp 100
-   jp nz,+
+   ret nz
    ld hl,GreenCarCel0
    ld (Iris.metasprite),hl
    ld a,ENABLED
    ld (Iris.status),a
-   ret
-+:
-
    ret
 MoveEnemies:
    ld ix,Ash
