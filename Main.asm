@@ -85,11 +85,13 @@ rst $20
 .define    GOING_LEFT 1
 .define    ENEMY_RIGHT_BORDER 140
 .define    ENEMY_LEFT_BORDER 18
-.define    EASY_MODE_MASK %00000111
-.define    HARD_MODE_MASK %00000011
+.define    EASY_MODE_MASK %00001111 ; Too easy/hard?!
+.define    HARD_MODE_MASK %00000111
+.define    HARD_MODE_THRESHOLD 5
+.define    EASY_MODE 0
+.define    HARD_MODE 1
 .define    DISABLED 0
 .define    ENABLED 1
-
 .struct EnemyObject
    y db                  ; 0
    x db                  ; 1
@@ -121,6 +123,8 @@ rst $20
    May INSTANCEOF EnemyObject
    Iris INSTANCEOF EnemyObject
    EnemyScript db
+   GameModeCounter dw
+   GameMode db
 .ends
 
 ; =============================================================================
@@ -244,6 +248,8 @@ InitializeGeneralVariables:
    ld (CollisionFlag),a
    ld a,r
    ld (RandomSeed),a
+   ld a,EASY_MODE
+   ld (GameMode),a
    ret
 ; ---------------------
 MainLoop:
@@ -253,8 +259,9 @@ MainLoop:
    ld b,VDP_VERTICAL_SCROLL_REGISTER
    call SetRegister
    call Housekeeping
-   call DetectCollision  ; Set CollisionFlag if two hardware sprites overlap.
+   ;call DetectCollision  ; Set CollisionFlag if two hardware sprites overlap.
    call HandleEnemyScript
+   call HandleGameModeCounter
    call MovePlayer
    call MoveEnemies
    call ScrollRacetrack  ; Not the actual vdp register updating - see above.
@@ -270,11 +277,23 @@ ScrollRacetrack:
    sub PLAYER_VERTICAL_SPEED
    ld (Scroll),a
    ret
-AnimatePlayer:
-   ld ix,PlayerY
-   ld bc,PlayerCelTable
-   ld hl,PlayerMetaSpriteDataPointer
-   call AnimateCar
+HandleGameModeCounter:
+   ld a,(GameMode)
+   cp HARD_MODE
+   ret z
+   ld a,(GameModeCounter)
+   inc a
+   ld (GameModeCounter),a
+   cp 255
+   ret nz
+   ld a,(GameModeCounter+1)
+   inc a
+   ld (GameModeCounter+1),a
+   cp HARD_MODE_THRESHOLD
+   ret nz
+   debug:
+   ld a,HARD_MODE
+   ld (GameMode),a
    ret
 AnimateCar:
    push hl               ; Save pointer to meta sprite data.
@@ -303,7 +322,7 @@ DetectCollision:
    ret z
    ld a,FLAG_UP
    ld (CollisionFlag),a
-   ret                 ; Return from main loop.
+   ret                   ; Return from main loop.
 UpdateSATBuffers:
    ld ix,PlayerY
    call UpdateCar
@@ -391,6 +410,12 @@ InitializePlayer:
    ld (PlayerMetaSpriteDataPointer),hl
    ld ix,PlayerY
    call UpdateCar
+   ret
+AnimatePlayer:
+   ld ix,PlayerY
+   ld bc,PlayerCelTable
+   ld hl,PlayerMetaSpriteDataPointer
+   call AnimateCar
    ret
 MovePlayer:
    ld a,(Joystick1)
@@ -555,8 +580,16 @@ ResetEnemy:
    add hl,de
    ld a,(hl)
    ld (ix+1),a           ; Enemy's x-position.
+   ld a,(GameMode)
+   cp EASY_MODE
+   jp nz,+
    call GetRandomNumber
    and EASY_MODE_MASK    ; Will the car move r/l, or just straight down?
+   ld (ix+6),a
+   ret
++:
+   call GetRandomNumber
+   and HARD_MODE_MASK    ; Will the car move r/l, or just straight down?
    ld (ix+6),a
    ret
 AnimateEnemies:
@@ -564,7 +597,7 @@ AnimateEnemies:
    cp 0
    jp z,+
    ld ix,Ash
-   ld bc,AshCelTable
+   ld bc,EnemyCelTable
    ld hl,Ash.metasprite
    call AnimateCar
 +:
@@ -572,7 +605,7 @@ AnimateEnemies:
    cp 0
    jp z,+
    ld ix,May
-   ld bc,AshCelTable
+   ld bc,EnemyCelTable
    ld hl,May.metasprite
    call AnimateCar
 +:
@@ -580,7 +613,7 @@ AnimateEnemies:
    cp 0
    jp z,+
    ld ix,Iris
-   ld bc,AshCelTable
+   ld bc,EnemyCelTable
    ld hl,Iris.metasprite
    call AnimateCar
 +:
@@ -668,6 +701,10 @@ PlayerCelTable:
 DisabledCar:
    .db 0 0 0 0 0 0 0 0
    .db 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0
+DisabledCarCelTable:
+   .dw DisabledCar
+   .dw DisabledCar
+   .dw DisabledCar
 GreenCarCel0:
    .db 0 0 0 0 16 16 16 16
    .db 0 32 8 34 16 36 24 38 0 40 8 42 16 44 24 46
@@ -677,7 +714,7 @@ GreenCarCel1:
 GreenCarCel2:
    .db 0 0 0 0 16 16 16 16
    .db 0 48 8 34 16 36 24 50 0 52 8 42 16 44 24 54
-AshCelTable:
+EnemyCelTable:
    .dw GreenCarCel0
    .dw GreenCarCel1
    .dw GreenCarCel2
