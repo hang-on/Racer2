@@ -89,11 +89,12 @@ rst $20
 .define    HARD_MODE_MASK %00000011
 
 .struct EnemyObject
-   y db
-   x db
-   metasprite dw
-   cel db
-   movement db
+   y db                  ; 0
+   x db                  ; 1
+   metasprite dw         ; 2
+   cel db                ; 4
+   index db              ; 5
+   movement db           ; 6
 .endst
 ; =============================================================================
 ; V A R I A B L E S
@@ -112,6 +113,7 @@ rst $20
    PlayerX db
    PlayerMetaSpriteDataPointer dw ; Pointer to metasprite data.
    PlayerCel db
+   PlayerIndex db
    Ash INSTANCEOF EnemyObject
    May INSTANCEOF EnemyObject
    Iris INSTANCEOF EnemyObject
@@ -316,72 +318,65 @@ UpdateSATBuffers:
    call UpdateCar
    ret
 UpdateCar:
-   ld b,4                ; 4 loops, each  loop calculating 2 y-positions.
+   call HandleY          ; Calc. y-positions and load them to SpriteBufferY.
+   call HandleXC         ; Calc. and load x-positions and character codes.
+   ret
+HandleY:
+   ld hl,SpriteBufferY
+   ld a,(ix+5)           ; Get the car's index.
+   add a,a               ; Start writing at buffer offset 8 x index.
+   add a,a
+   add a,a
+   ld d,0
+   ld e,a
+   add hl,de
+   ex de,hl              ; DE points to first y-pos in buffer.
+   ld b,8
    ld a,(ix+0)           ; Get the car's y-position.
    ld c,a                ; Save it in register C.
    ld h,(ix+3)           ; Get the meta sprite data pointer,
    ld l,(ix+2)           ; and store it in HL.
 -:
    ld a,(hl)             ; Read offset.
-   inc hl                ; Point HL to the next offset.
    add a,c               ; Apply saved y-position to offset.
-   ld d,a                ; Save offset y-position in D.
-   ld a,(hl)             ; Get new offset.
-   inc hl                ; Point HL to next offset.
-   add a,c               ; Apply saved y-position to offset.
-   ld e,a                ; Save this offet y-position in E
-   push de               ; Push the two offset y-positions to the stack.
-   djnz -                ; Perform all 4 loops, then continue...
-   ld de,16              ; Fast forward the meta sprite data pointer, so we
-   add hl,de             ; can read the buffer index.
-   ld a,(hl)             ; Read buffer index (0-2) into A.
-   rla                   ; Use buffer index to calculate where to put the
-   rla                   ; first of the offset y-position bytes.
-   rla                   ; Start address = 8 x buffer index + SpriteBufferY.
-   ld h,0
-   ld l,a
-   ld de,SpriteBufferY
+   ld (de),a
+   inc de
+   inc hl
+   djnz -                ; Perform all 8 loops, then continue...
+   ret
+HandleXC:
+   ld h,(ix+3)           ; Get the meta sprite data pointer,
+   ld l,(ix+2)           ; and store it in HL.
+   ld d,0                ; Now skip the first 8 bytes (the y-positions).
+   ld e,8
    add hl,de
-   ex de,hl              ; Now DE points to the desired place in the buffer.
-   ld hl,0               ; Load the stack pointer into HL (because the
-   add hl,sp             ; y-positions are on the stack).
-   ld bc,$0008           ; Let's move these 8 bytes from the stack to the
-   ldir                  ; buffer.
-   ld sp,hl              ; Restore the stack pointer. Beware of NMI!!
-   ld b,8                ; This time we loop 8 times.
+   push hl               ; Save the offset source pointer on the stack.
+   ld hl,SpriteBufferXC  ; Set up a destination pointer in the buffer.
+   ld a,(ix+5)
+   add a,a               ; Offset = 16 x index.
+   add a,a
+   add a,a
+   add a,a
+   ld d,0
+   ld e,a
+   add hl,de
+   ex de,hl              ; DE points to where we will write the first XC pair.
+   ld b,8
    ld a,(ix+1)           ; Get the car's x-position.
-   ld c,a                ; Save it like above.
-   ld h,(ix+3)           ; Get the meta sprite data pointer.
-   ld l,(ix+2)
-   ld d,0                ; Add 8 to the meta sprite data pointer, so that
-   ld e,8                ; we can skip past the y-offsets used in the
-   add hl,de             ; calculations above.
+   ld c,a                ; Save it in register C.
+   pop hl                ; Retrieve the meta sprite source pointer from stack.
 -:
-   ld a,(hl)             ; Read first x-offset.
-   inc hl                ; Forward data pointer.
-   add a,c               ; Apply car's x-position to the offset.
-   ld e,a                ; Save offset x-position in E.
-   ld a,(hl)             ; Read the character code (tile).
-   inc hl                ; Forward data pointer once more.
-   ld d,a                ; Save character code in D.
-   push de               ; Save x and char on the stack.
-   djnz -                ; Process all 8 XC pairs.
-   ld a,(hl)             ; Get buffer index (0-2).
-   rla                   ; Calculate address of first x position, using the
-   rla                   ; formula: Buffer index * 2 * 8.
-   rla
-   rla
-   ld h,0
-   ld l,a
-   ld de,SpriteBufferXC
-   add hl,de
-   ex de,hl              ; Now DE points to the correct place in the buffer.
-   ld hl,0               ; Load HL with the stack pointer.
-   add hl,sp
-   ld bc,$0010           ; Block move 16 bytes.
-   ldir                  ; Do it!
-   ld sp,hl              ; Restore the stack pointer.
-   ret                   ; Return from function UpdateCar.
+   ld a,(hl)             ; Read offset.
+   add a,c               ; Apply saved x-position to offset.
+   ld (de),a             ; Save this to the buffer.
+   inc de
+   inc hl
+   ld a,(hl)             ; Get the character code.
+   ld (de),a             ; Save this in the buffer
+   inc de
+   inc hl
+   djnz -                ; Perform all 8 loops, then continue...
+   ret
 .ends
 ; ---------------------
 .section "The player" free
@@ -436,20 +431,26 @@ InitializeEnemies:
    ld (Ash.y),a
    ld a,ASH_X_START
    ld (Ash.x),a
-   ld hl,AshCel0
+   ld hl,GreenCarCel0
    ld (Ash.metasprite),hl
+   ld a,1
+   ld (Ash.index),a
    ld a,MAY_Y_START
    ld (May.y),a
    ld a,MAY_X_START
    ld (May.x),a
-   ld hl,MayCel0
+   ld hl,GreenCarCel0
    ld (May.metasprite),hl
+   ld a,2
+   ld (May.index),a
    ld a,IRIS_Y_START
    ld (Iris.y),a
    ld a,IRIS_X_START
    ld (Iris.x),a
-   ld hl,IrisCel0
+   ld hl,GreenCarCel0
    ld (Iris.metasprite),hl
+   ld a,3
+   ld (Iris.index),a
    ld ix,Ash
    call UpdateCar
    ld ix,May
@@ -470,7 +471,7 @@ MoveEnemyVertically:
    call ResetEnemy
    ret
 MoveEnemyHorizontally:
-   ld a,(ix+5)           ; Get direction
+   ld a,(ix+6)           ; Get direction
    cp GOING_RIGHT
    jp nz,+
    call MoveEnemyRight
@@ -500,15 +501,15 @@ MoveEnemyLeft:
    ld (ix+1),a
    ret
 ToggleEnemyDirection:
-   ld a,(ix+5)           ; Get enemy direction.
+   ld a,(ix+6)           ; Get enemy direction.
    cp GOING_LEFT
    jp nz,+
    ld a,GOING_RIGHT
-   ld (ix+5),a
+   ld (ix+6),a
    ret
 +:
    ld a,GOING_LEFT
-   ld (ix+5),a
+   ld (ix+6),a
    ret
 ResetEnemy:
    call GetRandomNumber
@@ -521,7 +522,7 @@ ResetEnemy:
    ld (ix+1),a           ; Enemy's x-position.
    call GetRandomNumber
    and EASY_MODE_MASK    ; Will the car move r/l, or just straight down?
-   ld (ix+5),a
+   ld (ix+6),a
    ret
 AnimateEnemies:
    ld ix,Ash
@@ -529,11 +530,11 @@ AnimateEnemies:
    ld hl,Ash.metasprite
    call AnimateCar
    ld ix,May
-   ld bc,MayCelTable
+   ld bc,AshCelTable
    ld hl,May.metasprite
    call AnimateCar
    ld ix,Iris
-   ld bc,IrisCelTable
+   ld bc,AshCelTable
    ld hl,Iris.metasprite
    call AnimateCar
    ret
@@ -605,69 +606,31 @@ LoadSAT:
 PlayerCel0:
    .db 0 0 0 0 16 16 16 16 ; Y-offset.
    .db 0 64 8 66 16 68 24 70 0 72 8 74 16 76 24 78 ; X-offset + char pairs.
-   .db 0                 ; Sprite buffer index.
 PlayerCel1:
    .db 0 0 0 0 16 16 16 16
    .db 0 88 8 66 16 68 24 90 0 92 8 74 16 76 24 94
-   .db 0
 PlayerCel2:
    .db 0 0 0 0 16 16 16 16
    .db 0 80 8 66 16 68 24 82 0 84 8 74 16 76 24 86
-   .db 0
 PlayerCelTable:
    .dw PlayerCel0
    .dw PlayerCel1
    .dw PlayerCel2
 
 ; Enemies
-AshCel0:
+GreenCarCel0:
    .db 0 0 0 0 16 16 16 16
    .db 0 32 8 34 16 36 24 38 0 40 8 42 16 44 24 46
-   .db 1
-AshCel1:
+GreenCarCel1:
    .db 0 0 0 0 16 16 16 16
    .db 0 56 8 34 16 36 24 58 0 60 8 42 16 44 24 62
-   .db 1
-AshCel2:
+GreenCarCel2:
    .db 0 0 0 0 16 16 16 16
    .db 0 48 8 34 16 36 24 50 0 52 8 42 16 44 24 54
-   .db 1
 AshCelTable:
-   .dw AshCel0
-   .dw AshCel1
-   .dw AshCel2
-MayCel0:
-   .db 0 0 0 0 16 16 16 16
-   .db 0 32 8 34 16 36 24 38 0 40 8 42 16 44 24 46
-   .db 2
-MayCel1:
-   .db 0 0 0 0 16 16 16 16
-   .db 0 56 8 34 16 36 24 58 0 60 8 42 16 44 24 62
-   .db 2
-MayCel2:
-   .db 0 0 0 0 16 16 16 16
-   .db 0 48 8 34 16 36 24 50 0 52 8 42 16 44 24 54
-   .db 2
-MayCelTable:
-   .dw MayCel0
-   .dw MayCel1
-   .dw MayCel2
-IrisCel0:
-   .db 0 0 0 0 16 16 16 16
-   .db 0 32 8 34 16 36 24 38 0 40 8 42 16 44 24 46
-   .db 3
-IrisCel1:
-   .db 0 0 0 0 16 16 16 16
-   .db 0 56 8 34 16 36 24 58 0 60 8 42 16 44 24 62
-   .db 3
-IrisCel2:
-   .db 0 0 0 0 16 16 16 16
-   .db 0 48 8 34 16 36 24 50 0 52 8 42 16 44 24 54
-   .db 3
-IrisCelTable:
-   .dw IrisCel0
-   .dw IrisCel1
-   .dw IrisCel2
+   .dw GreenCarCel0
+   .dw GreenCarCel1
+   .dw GreenCarCel2
 RespawnTable:
    .db 20 40 60 80 100 120 140 150
    .db 25 43 63 83 92 102 119 145
