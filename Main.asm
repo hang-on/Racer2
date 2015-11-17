@@ -439,7 +439,7 @@ InitializeEnemies:
    ld (Ash.y),a
    ld a,ASH_X_START
    ld (Ash.x),a
-   ld hl,AshCel0
+   ld hl,GreenCarCel0
    ld (Ash.metasprite),hl
    ld a,1
    ld (Ash.index),a
@@ -447,7 +447,7 @@ InitializeEnemies:
    ld (May.y),a
    ld a,MAY_X_START
    ld (May.x),a
-   ld hl,AshCel0
+   ld hl,GreenCarCel0
    ld (May.metasprite),hl
    ld a,2
    ld (May.index),a
@@ -455,7 +455,7 @@ InitializeEnemies:
    ld (Iris.y),a
    ld a,IRIS_X_START
    ld (Iris.x),a
-   ld hl,AshCel0
+   ld hl,GreenCarCel0
    ld (Iris.metasprite),hl
    ld a,3
    ld (Iris.index),a
@@ -626,19 +626,19 @@ PlayerCelTable:
    .dw PlayerCel2
 
 ; Enemies
-AshCel0:
+GreenCarCel0:
    .db 0 0 0 0 16 16 16 16
    .db 0 32 8 34 16 36 24 38 0 40 8 42 16 44 24 46
-AshCel1:
+GreenCarCel1:
    .db 0 0 0 0 16 16 16 16
    .db 0 56 8 34 16 36 24 58 0 60 8 42 16 44 24 62
-AshCel2:
+GreenCarCel2:
    .db 0 0 0 0 16 16 16 16
    .db 0 48 8 34 16 36 24 50 0 52 8 42 16 44 24 54
 AshCelTable:
-   .dw AshCel0
-   .dw AshCel1
-   .dw AshCel2
+   .dw GreenCarCel0
+   .dw GreenCarCel1
+   .dw GreenCarCel2
 RespawnTable:
    .db 20 40 60 80 100 120 140 150
    .db 25 43 63 83 92 102 119 145
