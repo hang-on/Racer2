@@ -59,7 +59,7 @@
 .define    PLAYER1_START 4
 .define    WHOLE_NAMETABLE 32*28*2
 .define    VISIBLE_PART_OF_SCREEN 32*24*2
-.define    RED_DIGITS_TILE_ADDRESS 60*32 ; mockup is currently 60 tiles...
+.define    RED_DIGITS_TILE_ADDRESS 54*32 ; racetrack is currently 54 tiles...
 .define    RED_DIGITS_TILE_AMOUNT 20*32
 .define    SCORE_DIGIT_1_ADDRESS $38f6
 
