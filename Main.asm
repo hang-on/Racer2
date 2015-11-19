@@ -53,6 +53,8 @@ rst $20
 .define    PLAYER1_START 4
 .define    WHOLE_NAMETABLE 32*28*2
 .define    VISIBLE_PART_OF_SCREEN 32*24*2
+.define    RED_DIGITS_TILE_ADDRESS 60*32 ; mockup is currently 60 tiles...
+.define    RED_DIGITS_TILE_AMOUNT 20*32
 
 .define    BOTTOM_BORDER 193
 .define    RIGHT_BORDER 156
@@ -222,6 +224,7 @@ PrepareRace:
    call SetRegister
    call InitializeGeneralVariables
    call InitializeBackground
+   call InitializeScore
    call InitializeSprites
    call LoadSAT          ; Load the sprite attrib. table from the buffers.
    ld a,TURN_SCREEN_ON_TALL_SPRITES
@@ -230,6 +233,13 @@ PrepareRace:
    ei
    halt                  ; Make sure yo don't die right when race restarts.
    halt
+   ret
+InitializeScore:
+   ld hl,RED_DIGITS_TILE_ADDRESS
+   PrepareVram
+   ld hl,RedDigits_Tiles
+   ld bc,RED_DIGITS_TILE_AMOUNT
+   call LoadVRAM
    ret
 InitializeBackground:
    ld ix,RacetrackMockupData ; Load the racetrack dummy image data.
@@ -744,6 +754,8 @@ RacetrackPalette:
 RacetrackPaletteEnd:
 PlayerCar_Tiles:
    .include "Race\PlayerCar_tiles.inc"
+RedDigits_Tiles:
+   .include "Race\RedDigits_tiles.inc"
 EnemyCar_Tiles:
    .include "Race\EnemyCar_tiles.inc"
 Sprites_Palette:
