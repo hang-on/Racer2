@@ -19,7 +19,13 @@
 ; M A C R O S
 ; =============================================================================
 .macro PrepareVram
-rst $20
+   rst $20
+.endm
+.macro Outi_x4
+   outi
+   outi
+   outi
+   outi
 .endm
 
 ; =============================================================================
@@ -55,6 +61,7 @@ rst $20
 .define    VISIBLE_PART_OF_SCREEN 32*24*2
 .define    RED_DIGITS_TILE_ADDRESS 60*32 ; mockup is currently 60 tiles...
 .define    RED_DIGITS_TILE_AMOUNT 20*32
+.define    SCORE_DIGIT_1_ADDRESS $38f6
 
 .define    BOTTOM_BORDER 193
 .define    RIGHT_BORDER 156
@@ -113,6 +120,7 @@ rst $20
    Joystick2 db          ; (via the ReadJoysticks function).
    SpriteBufferY dsb 64
    SpriteBufferXC dsb 128
+   ScoreBuffer dsb 8
    Scroll db             ; Vertical scroll register mirror.
    CollisionFlag db
    RandomSeed dw
@@ -240,6 +248,7 @@ InitializeScore:
    ld hl,RedDigits_Tiles
    ld bc,RED_DIGITS_TILE_AMOUNT
    call LoadVRAM
+   ; NOTE: TODO: Reset score variables here!
    ret
 InitializeBackground:
    ld ix,RacetrackMockupData ; Load the racetrack dummy image data.
@@ -269,8 +278,9 @@ MainLoop:
    ld a,(Scroll)
    ld b,VDP_VERTICAL_SCROLL_REGISTER
    call SetRegister
+   call LoadNameTable
    call Housekeeping
-   call DetectCollision  ; Set CollisionFlag if two hardware sprites overlap.
+   ;call DetectCollision  ; Set CollisionFlag if two hardware sprites overlap.
       ld a,(CollisionFlag)  ; Respond to collision flag.
    cp FLAG_UP
    ret z
@@ -699,6 +709,17 @@ LoadSAT:
    ld hl,SpriteBufferXC
    ld c,VDP_DATA
    call Outi_128
+   ret
+LoadNameTable:
+   ld hl,SCORE_DIGIT_1_ADDRESS
+   PrepareVram
+   ld hl,ScoreBuffer
+   ld c,VDP_DATA
+   Outi_x4
+   ld hl,SCORE_DIGIT_1_ADDRESS+64
+   PrepareVram
+   ld hl,ScoreBuffer+4
+   Outi_x4
    ret
 .ends
 ; ---------------------
