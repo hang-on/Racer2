@@ -59,8 +59,8 @@
 .define    PLAYER1_START 4
 .define    WHOLE_NAMETABLE 32*28*2
 .define    VISIBLE_PART_OF_SCREEN 32*24*2
-.define    RED_DIGITS_TILE_ADDRESS 54*32 ; racetrack is currently 54 tiles...
-.define    RED_DIGITS_TILE_AMOUNT 20*32
+.define    SCORE_DIGITS_TILE_ADDRESS 54*32 ; racetrack is currently 54 tiles...
+.define    SCORE_DIGITS_TILE_AMOUNT 20*32
 .define    SCORE_DIGIT_1_ADDRESS $38f6
 
 .define    BOTTOM_BORDER 193
@@ -243,10 +243,10 @@ PrepareRace:
    halt
    ret
 InitializeScore:
-   ld hl,RED_DIGITS_TILE_ADDRESS
+   ld hl,SCORE_DIGITS_TILE_ADDRESS
    PrepareVram
-   ld hl,RedDigits_Tiles
-   ld bc,RED_DIGITS_TILE_AMOUNT
+   ld hl,ScoreDigits_Tiles
+   ld bc,SCORE_DIGITS_TILE_AMOUNT
    call LoadVRAM
    ; NOTE: TODO: Reset score variables here!
    ret
@@ -775,8 +775,8 @@ RacetrackPalette:
 RacetrackPaletteEnd:
 PlayerCar_Tiles:
    .include "Race\PlayerCar_tiles.inc"
-RedDigits_Tiles:
-   .include "Race\RedDigits_tiles.inc"
+ScoreDigits_Tiles:
+   .include "Race\ScoreDigits_tiles.inc"
 EnemyCar_Tiles:
    .include "Race\EnemyCar_tiles.inc"
 Sprites_Palette:
