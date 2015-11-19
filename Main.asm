@@ -735,12 +735,12 @@ RespawnTable:
    .db 30 46 66 86 140 84 95 105
 
 RacetrackTiles:
-   .include "Race\Racetrack_tiles.inc"
+   .include "Race\rt_tiles.inc"
 RacetrackTilesEnd:
 RacetrackTilemap:
-   .include "Race\Racetrack_tilemap.inc"
+   .include "Race\rt_tilemap.inc"
 RacetrackPalette:
-   .include "Race\Racetrack_palette.inc"
+   .include "Race\rt_palette.inc"
 RacetrackPaletteEnd:
 PlayerCar_Tiles:
    .include "Race\PlayerCar_tiles.inc"
