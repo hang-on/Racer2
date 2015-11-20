@@ -98,8 +98,8 @@
 .define    GOING_LEFT 1
 .define    ENEMY_RIGHT_BORDER 140
 .define    ENEMY_LEFT_BORDER 18
-.define    EASY_MODE_MASK %00001111 ; Too easy/hard?!
-.define    HARD_MODE_MASK %00000111
+.define    EASY_MODE_MASK %00000111 ; Too easy/hard?!
+.define    HARD_MODE_MASK %00000011
 .define    HARD_MODE_THRESHOLD 5
 .define    EASY_MODE 0
 .define    HARD_MODE 1
