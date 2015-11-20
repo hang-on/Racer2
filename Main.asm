@@ -76,7 +76,7 @@
 
 ; Player values
 .define    PLAYER_VERTICAL_SPEED 6
-.define    PLAYER_HORIZONTAL_SPEED 3
+.define    PLAYER_HORIZONTAL_SPEED 2 ; could also be 3 ...?!
 .define    PLAYER_X_START 110
 .define    PLAYER_Y_START 135
 .define    FIRST_PLAYER_TILE $2800
@@ -100,7 +100,7 @@
 .define    ENEMY_LEFT_BORDER 18
 .define    EASY_MODE_MASK %00000111 ; Too easy/hard?!
 .define    HARD_MODE_MASK %00000011
-.define    HARD_MODE_THRESHOLD 5
+.define    HARD_MODE_THRESHOLD 3
 .define    EASY_MODE 0
 .define    HARD_MODE 1
 .define    DISABLED 0
@@ -263,7 +263,6 @@ InitializeScore:
    ld hl,ScoreDigits_Tiles
    ld bc,SCORE_DIGITS_TILE_AMOUNT
    call LoadVRAM
-   ; NOTE: TODO: Reset score variables here!
    ret
 InitializeBackground:
    ld ix,RacetrackMockupData ; Load the racetrack dummy image data.
@@ -286,6 +285,8 @@ InitializeGeneralVariables:
    ld (RandomSeed),a
    ld a,EASY_MODE
    ld (GameMode),a
+   ld hl,$0000
+   ld (Score),hl
    ret
 ; ---------------------
 MainLoop:
@@ -296,7 +297,7 @@ MainLoop:
    call SetRegister
    call LoadNameTable
    call Housekeeping
-   ;call DetectCollision  ; Set CollisionFlag if two hardware sprites overlap.
+   call DetectCollision  ; Set CollisionFlag if two hardware sprites overlap.
    ld a,(CollisionFlag)  ; Respond to collision flag.
    cp FLAG_UP            ; Return to control loop.
    ret z
