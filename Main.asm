@@ -687,6 +687,22 @@ ToggleEnemyDirection:
    ret
 ResetEnemy:
    call GetRandomNumber
+   and %00000111         ; Should this car be disabled?
+   cp 0
+   jp nz,+
+   ld a,DISABLED         ; Yes....
+   ld (ix+7),a
+   ld hl,DisabledCar
+   ld (ix+2),l
+   ld (ix+3),h
+   ret
++:
+   ld a,ENABLED
+   ld (ix+7),a
+   ld hl,GreenCarCel0
+   ld (ix+2),l
+   ld (ix+3),h
+   call GetRandomNumber
    and %00001111         ; Apply mask so that A contains a value between 0-31.
    ld d,0
    ld e,a
