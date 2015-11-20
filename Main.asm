@@ -49,7 +49,8 @@
 .define    TILEMAP_ADDRESS $3800
 .define    PALETTE_ADDRESS $c000 ; Bank 1 address.
 .define    PALETTE_BANK_2 $c010 ; Bank 2 address.
-.define    SCORE_DIGITS_TILE_ADDRESS 54*32 ; racetrack is currently 54 tiles...
+.define    SCORE_TILE_OFFSET 34 ; Used in the update score routine.
+.define    SCORE_DIGITS_TILE_ADDRESS 34*32 ; racetrack is currently 34 tiles...
 .define    SCORE_DIGITS_TILE_AMOUNT 20*32
 .define    SCORE_DIGIT_1_ADDRESS $38f6
 .define    TODAYS_BEST_SCORE_DIGIT_1_ADDRESS $3a76
@@ -360,12 +361,12 @@ HandleBestScore:
    ld a,(Score)
    cp b
    ret c
-   ld a,(TodaysBestScore+1)                ; First digit is equal or higher...
+   ld a,(TodaysBestScore+1) ; First digit is equal or higher...
    ld b,a
    ld a,(Score+1)
    cp b
    ret c
-   ld a,FLAG_UP
+   ld a,FLAG_UP             ; Second digit is higher = best score is beaten!
    ld (NewBestScoreFlag),a
    ret
 AnimateCar:
@@ -408,14 +409,14 @@ DetectCollision:
 UpdateScoreBuffer:
    ld a,(Score)
    add a,a
-   add a,54
+   add a,SCORE_TILE_OFFSET
    ld ix,ScoreBuffer
    ld (ix+0),a
    inc a
    ld (ix+4),a
    ld a,(Score+1)
    add a,a
-   add a,54
+   add a,SCORE_TILE_OFFSET
    ld ix,ScoreBuffer+2
    ld (ix+0),a
    inc a
@@ -424,14 +425,14 @@ UpdateScoreBuffer:
 UpdateTodaysBestScoreBuffer:
    ld a,(TodaysBestScore)
    add a,a
-   add a,54
+   add a,SCORE_TILE_OFFSET
    ld ix,TodaysBestScoreBuffer
    ld (ix+0),a
    inc a
    ld (ix+4),a
    ld a,(TodaysBestScore+1)
    add a,a
-   add a,54
+   add a,SCORE_TILE_OFFSET
    ld ix,TodaysBestScoreBuffer+2
    ld (ix+0),a
    inc a
