@@ -43,32 +43,35 @@
 .define    VDP_INTERRUPT_ADDRESS $0038
 .define    ALL_VDP_REGISTERS 11
 .define    VDP_WRITE_REGISTER_COMMAND $80
+
+; Vram map:
 .define    ADDRESS_OF_FIRST_TILE $0000
 .define    TILEMAP_ADDRESS $3800
 .define    PALETTE_ADDRESS $c000 ; Bank 1 address.
 .define    PALETTE_BANK_2 $c010 ; Bank 2 address.
+.define    SCORE_DIGITS_TILE_ADDRESS 54*32 ; racetrack is currently 54 tiles...
+.define    SCORE_DIGITS_TILE_AMOUNT 20*32
+.define    SCORE_DIGIT_1_ADDRESS $38f6
+.define    SAT_Y_TABLE $3f00
+.define    SAT_XC_TABLE $3f80
+
 .define    ONE_FULL_PALETTE 16
 .define    TURN_SCREEN_OFF %10000000
 .define    TURN_SCREEN_ON_TALL_SPRITES %11100010
 .define    VDP_REGISTER_1 1
 .define    VDP_VERTICAL_SCROLL_REGISTER 9
-.define    SAT_Y_TABLE $3f00
-.define    SAT_XC_TABLE $3f80
 .define    PLAYER1_JOYSTICK_RIGHT 3
 .define    PLAYER1_JOYSTICK_LEFT 2
 .define    PLAYER1_START 4
 .define    WHOLE_NAMETABLE 32*28*2
 .define    VISIBLE_PART_OF_SCREEN 32*24*2
-.define    SCORE_DIGITS_TILE_ADDRESS 54*32 ; racetrack is currently 54 tiles...
-.define    SCORE_DIGITS_TILE_AMOUNT 20*32
-.define    SCORE_DIGIT_1_ADDRESS $38f6
-
 .define    BOTTOM_BORDER 193
 .define    RIGHT_BORDER 156
 .define    LEFT_BORDER 5
 .define    MAX_CELS 2    ; Number of cels in a car's animation sequence.
 .define    FLAG_UP 1
 .define    FLAG_DOWN 0
+.define    SCORE_LINE 130 ; when to score one point.
 
 ; Player values
 .define    PLAYER_VERTICAL_SPEED 6
@@ -108,7 +111,7 @@
    cel db                ; 4
    index db              ; 5
    movement db           ; 6
-   status db
+   status db             ; 7
 .endst
 ; =============================================================================
 ; V A R I A B L E S
@@ -121,6 +124,7 @@
    SpriteBufferY dsb 64
    SpriteBufferXC dsb 128
    ScoreBuffer dsb 8
+   Score dw
    Scroll db             ; Vertical scroll register mirror.
    CollisionFlag db
    RandomSeed dw
@@ -178,8 +182,8 @@
 .section "Control" free
 Control:
    call InitializeFramework
-   call LoadTitleScreen
-   call TitlescreenLoop
+   ; call LoadTitleScreen
+   ; call TitlescreenLoop
 Restart:
    call PrepareRace
    call MainLoop
@@ -292,6 +296,7 @@ MainLoop:
    call AnimatePlayer
    call AnimateEnemies
    call UpdateSATBuffers
+   call UpdateScoreBuffer
    jp MainLoop           ; Do it all again...
 ScrollRacetrack:
    ld a,(Scroll)
@@ -353,6 +358,22 @@ DetectCollision:
    ld a,FLAG_UP
    ld (CollisionFlag),a
    ret                   ; Return from main loop.
+UpdateScoreBuffer:
+   ld a,(Score)
+   add a,a
+   add a,54
+   ld ix,ScoreBuffer
+   ld (ix+0),a
+   inc a
+   ld (ix+4),a
+   ld a,(Score+1)
+   add a,a
+   add a,54
+   ld ix,ScoreBuffer+2
+   ld (ix+0),a
+   inc a
+   ld (ix+4),a
+   ret
 UpdateSATBuffers:
    ld ix,PlayerY
    call UpdateCar
@@ -557,8 +578,11 @@ MoveEnemyVertically:
    add a,ENEMY_VERTICAL_SPEED
    ld (ix+0),a
    cp BOTTOM_BORDER
-   ret nz
-   call ResetEnemy
+   call z,ResetEnemy
+   ret
+IncrementScore:
+   ld hl,Score+1
+   inc (hl)
    ret
 MoveEnemyHorizontally:
    ld a,(ix+6)           ; Get direction
@@ -660,6 +684,8 @@ Housekeeping:
 IncrementFrameCounter:
    ld hl,FrameCounter
    inc (hl)
+   ret
+HandleScore:
    ret
 .ends
 ; ---------------------
