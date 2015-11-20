@@ -73,7 +73,7 @@
 .define    FLAG_UP 1
 .define    FLAG_DOWN 0
 .define    SCORE_LINE 135 ; when to score one point.
-
+.define    TODAYS_BEST_SCORE_INITIAL_VALUE $0001 ; = 10.
 ; Player values
 .define    PLAYER_VERTICAL_SPEED 6
 .define    PLAYER_HORIZONTAL_SPEED 2 ; could also be 3 ...?!
@@ -128,7 +128,9 @@
    TodaysBestScoreBuffer dsb 8
    Score dw
    TodaysBestScore dw
+   NewBestScoreFlag db
    WorldRecord dw
+   NewWorldRecordFlag db
    Scroll db             ; Vertical scroll register mirror.
    CollisionFlag db
    GameBeatenFlag db     ; Is the score overflowing from 99?
@@ -234,7 +236,7 @@ InitializeFramework:
    call SetHighScores
    ret
 SetHighScores:
-   ld hl,$0002
+   ld hl,TODAYS_BEST_SCORE_INITIAL_VALUE
    ld (TodaysBestScore),hl
    ret
 .ends
@@ -281,6 +283,7 @@ InitializeGeneralVariables:
    xor a
    ld (CollisionFlag),a
    ld (GameBeatenFlag),a
+   ld (NewBestScoreFlag),a
    ld a,r
    ld (RandomSeed),a
    ld a,EASY_MODE
@@ -305,7 +308,7 @@ MainLoop:
    cp FLAG_UP
    jp nz,+
    neverend:
-   jp neverend
+   jp neverend           ; Placeholder for real celebration rotine.
 +:
    call HandleEnemyScript
    call HandleGameModeCounter
@@ -314,6 +317,7 @@ MainLoop:
    call ScrollRacetrack  ; Not the actual vdp register updating - see above.
    call AnimatePlayer
    call AnimateEnemies
+   call HandleBestScore
    call UpdateSATBuffers
    call UpdateScoreBuffer
    call UpdateTodaysBestScoreBuffer
@@ -337,9 +341,32 @@ HandleGameModeCounter:
    ld (GameModeCounter+1),a
    cp HARD_MODE_THRESHOLD
    ret nz
-   debug:
    ld a,HARD_MODE
    ld (GameMode),a
+   ret
+HandleBestScore:
+   ld a,(NewBestScoreFlag)
+   cp FLAG_UP
+   jp nz,+
+   ld hl,Score
+   ld de,TodaysBestScore
+   ldi
+   ldi
+   ret
++:
+   ; See if flag should go up...
+   ld a,(TodaysBestScore)
+   ld b,a
+   ld a,(Score)
+   cp b
+   ret c
+   ld a,(TodaysBestScore+1)                ; First digit is equal or higher...
+   ld b,a
+   ld a,(Score+1)
+   cp b
+   ret c
+   ld a,FLAG_UP
+   ld (NewBestScoreFlag),a
    ret
 AnimateCar:
    push hl               ; Save pointer to meta sprite data.
