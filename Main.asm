@@ -127,6 +127,7 @@
    Score dw
    Scroll db             ; Vertical scroll register mirror.
    CollisionFlag db
+   GameBeatenFlag db     ; Is the score overflowing from 99?
    RandomSeed dw
    PlayerY db
    PlayerX db
@@ -271,6 +272,7 @@ InitializeSprites:
 InitializeGeneralVariables:
    xor a
    ld (CollisionFlag),a
+   ld (GameBeatenFlag),a
    ld a,r
    ld (RandomSeed),a
    ld a,EASY_MODE
@@ -286,9 +288,15 @@ MainLoop:
    call LoadNameTable
    call Housekeeping
    ;call DetectCollision  ; Set CollisionFlag if two hardware sprites overlap.
-      ld a,(CollisionFlag)  ; Respond to collision flag.
-   cp FLAG_UP
+   ld a,(CollisionFlag)  ; Respond to collision flag.
+   cp FLAG_UP            ; Return to control loop.
    ret z
+   ld a,(GameBeatenFlag)
+   cp FLAG_UP
+   jp nz,+
+   neverend:
+   jp neverend
++:
    call HandleEnemyScript
    call HandleGameModeCounter
    call MovePlayer
@@ -588,8 +596,26 @@ MoveEnemyVertically:
    call z,IncrementScore
    ret
 IncrementScore:
-   ld hl,Score+1
-   inc (hl)
+   ld a,(Score+1)
+   cp 9
+   jp z,+
+   inc a
+   ld (Score+1),a
+   ret
++:
+   xor a
+   ld (Score+1),a
+   ld a,(Score)
+   cp 9
+   jp nz,+
+   ld a,FLAG_UP
+   ld (GameBeatenFlag),a
+   ld hl,$0909           ; Stupid little hack to end with a score of 99.
+   ld (Score),hl
+   ret
++:
+   inc a
+   ld (Score),a
    ret
 MoveEnemyHorizontally:
    ld a,(ix+6)           ; Get direction
@@ -691,9 +717,6 @@ Housekeeping:
 IncrementFrameCounter:
    ld hl,FrameCounter
    inc (hl)
-   ret
-HandleScore:
-
    ret
 .ends
 ; ---------------------
