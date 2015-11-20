@@ -52,6 +52,7 @@
 .define    SCORE_DIGITS_TILE_ADDRESS 54*32 ; racetrack is currently 54 tiles...
 .define    SCORE_DIGITS_TILE_AMOUNT 20*32
 .define    SCORE_DIGIT_1_ADDRESS $38f6
+.define    TODAYS_BEST_SCORE_DIGIT_1_ADDRESS $3a76
 .define    SAT_Y_TABLE $3f00
 .define    SAT_XC_TABLE $3f80
 
@@ -124,7 +125,10 @@
    SpriteBufferY dsb 64
    SpriteBufferXC dsb 128
    ScoreBuffer dsb 8
+   TodaysBestScoreBuffer dsb 8
    Score dw
+   TodaysBestScore dw
+   WorldRecord dw
    Scroll db             ; Vertical scroll register mirror.
    CollisionFlag db
    GameBeatenFlag db     ; Is the score overflowing from 99?
@@ -227,6 +231,11 @@ InitializeFramework:
    call PSGInit
    ld hl,RegisterInitValues
    call LoadVDPRegisters
+   call SetHighScores
+   ret
+SetHighScores:
+   ld hl,$0002
+   ld (TodaysBestScore),hl
    ret
 .ends
 ; ---------------------
@@ -306,6 +315,7 @@ MainLoop:
    call AnimateEnemies
    call UpdateSATBuffers
    call UpdateScoreBuffer
+   call UpdateTodaysBestScoreBuffer
    jp MainLoop           ; Do it all again...
 ScrollRacetrack:
    ld a,(Scroll)
@@ -379,6 +389,22 @@ UpdateScoreBuffer:
    add a,a
    add a,54
    ld ix,ScoreBuffer+2
+   ld (ix+0),a
+   inc a
+   ld (ix+4),a
+   ret
+UpdateTodaysBestScoreBuffer:
+   ld a,(TodaysBestScore)
+   add a,a
+   add a,54
+   ld ix,TodaysBestScoreBuffer
+   ld (ix+0),a
+   inc a
+   ld (ix+4),a
+   ld a,(TodaysBestScore+1)
+   add a,a
+   add a,54
+   ld ix,TodaysBestScoreBuffer+2
    ld (ix+0),a
    inc a
    ld (ix+4),a
@@ -777,6 +803,17 @@ LoadNameTable:
    PrepareVram
    ld hl,ScoreBuffer+4
    Outi_x4
+
+   ld hl,TODAYS_BEST_SCORE_DIGIT_1_ADDRESS
+   PrepareVram
+   ld hl,TodaysBestScoreBuffer
+   ld c,VDP_DATA
+   Outi_x4
+   ld hl,TODAYS_BEST_SCORE_DIGIT_1_ADDRESS+64
+   PrepareVram
+   ld hl,TodaysBestScoreBuffer+4
+   Outi_x4
+
    ret
 .ends
 ; ---------------------
