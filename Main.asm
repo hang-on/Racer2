@@ -71,7 +71,7 @@
 .define    MAX_CELS 2    ; Number of cels in a car's animation sequence.
 .define    FLAG_UP 1
 .define    FLAG_DOWN 0
-.define    SCORE_LINE 130 ; when to score one point.
+.define    SCORE_LINE 135 ; when to score one point.
 
 ; Player values
 .define    PLAYER_VERTICAL_SPEED 6
@@ -87,7 +87,7 @@
 .define    MAY_X_START 30
 .define    MAY_Y_START 85
 .define    IRIS_X_START 90
-.define    IRIS_Y_START 170
+.define    IRIS_Y_START 171
 .define    ENEMY_HORIZONTAL_SPEED 1
 .define    ENEMY_VERTICAL_SPEED 2
 .define    FIRST_ENEMY_TILE $2400
@@ -140,6 +140,7 @@
    EnemyScript db
    GameModeCounter dw
    GameMode db
+   ScoreTimer db
 .ends
 
 ; =============================================================================
@@ -579,6 +580,12 @@ MoveEnemyVertically:
    ld (ix+0),a
    cp BOTTOM_BORDER
    call z,ResetEnemy
+   ld a,(ix+7)
+   cp ENABLED
+   ret nz
+   ld a,(ix+0)
+   cp SCORE_LINE
+   call z,IncrementScore
    ret
 IncrementScore:
    ld hl,Score+1
@@ -686,6 +693,7 @@ IncrementFrameCounter:
    inc (hl)
    ret
 HandleScore:
+
    ret
 .ends
 ; ---------------------
