@@ -206,6 +206,8 @@ ShowTitleScreen:
    ld a,TURN_SCREEN_ON_TALL_SPRITES
    ld b,VDP_REGISTER_1
    call SetRegister
+   ld hl,Intro
+   call PSGPlayNoRepeat
    ei
    call TitlescreenLoop
    xor a
@@ -295,6 +297,7 @@ LoadTitleScreen:
 TitlescreenLoop:
    call WaitForFrameInterrupt
    call AnimateTitle
+   call PSGFrame
    call Housekeeping
    ld a,(Joystick1)
    bit PLAYER1_START,a
@@ -1021,6 +1024,8 @@ Crash:
    .incbin "Race\Crash.psg"
 NewBestScoreSFX:
    .incbin "Race\NewBestScore.psg"
+Intro:
+   .incbin "Race\Intro.psg"
 
 PlayerCel0:
    .db 0 0 0 0 16 16 16 16 ; Y-offset.
