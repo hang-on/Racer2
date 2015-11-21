@@ -130,8 +130,6 @@
    Score dw
    TodaysBestScore dw
    NewBestScoreFlag db
-   WorldRecord dw
-   NewWorldRecordFlag db
    Scroll db             ; Vertical scroll register mirror.
    CollisionFlag db
    GameBeatenFlag db     ; Is the score overflowing from 99?
