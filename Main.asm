@@ -77,6 +77,10 @@
 .define    FLAG_DOWN 0
 .define    SCORE_LINE 135 ; when to score one point.
 .define    TODAYS_BEST_SCORE_INITIAL_VALUE $0001 ; = 10.
+.define    ORANGE $0b
+.define    WHITE $3f
+.define    DUMMY $23
+
 ; Player values
 .define    PLAYER_VERTICAL_SPEED 6
 .define    PLAYER_HORIZONTAL_SPEED 2 ; could also be 3 ...?!
@@ -149,6 +153,8 @@
    GameModeCounter dw
    GameMode db
    AttemptCounter db
+   Cycle db
+   Counter db
 .ends
 
 ; =============================================================================
@@ -274,11 +280,57 @@ LoadTitleScreen:
    ret
 TitlescreenLoop:
    call WaitForFrameInterrupt
+   call AnimateTitle
    call Housekeeping
    ld a,(Joystick1)
    bit PLAYER1_START,a
    ret z
    jp TitlescreenLoop
+AnimateTitle:
+   ld c,VDP_CONTROL
+   ld a,$06
+   out (c),a
+   or %11000000
+   out (c),a
+   ld c,VDP_DATA
+   ld d,0
+   ld a,(Counter)
+   cp 0
+   call z,DoColorCycle
+   add a,16
+   ld (Counter),a
+   ret
+DoColorCycle:
+   ld a,(Cycle)
+   inc a
+   cp 6
+   jp nz,+
+   xor a
++:
+   ld (Cycle),a
+   add a,a
+   add a,a
+   add a,a ; times 8
+   ld e,a
+   ld hl,PaletteTable
+   add hl,de
+   outi
+   outi
+   outi
+   outi
+   outi
+   outi
+   outi
+   outi
+   ret
+PaletteTable:
+   .db ORANGE ORANGE ORANGE ORANGE ORANGE DUMMY DUMMY DUMMY
+   .db WHITE ORANGE ORANGE ORANGE ORANGE DUMMY DUMMY DUMMY
+   .db ORANGE WHITE ORANGE ORANGE ORANGE DUMMY DUMMY DUMMY
+   .db ORANGE ORANGE WHITE ORANGE ORANGE DUMMY DUMMY DUMMY
+   .db ORANGE ORANGE ORANGE WHITE ORANGE DUMMY DUMMY DUMMY
+   .db ORANGE ORANGE ORANGE ORANGE WHITE DUMMY DUMMY DUMMY
+
 .ends
 ; ---------------------
 .section "Death" free
