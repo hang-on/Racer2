@@ -208,6 +208,8 @@ ShowTitleScreen:
    call SetRegister
    ei
    call TitlescreenLoop
+   xor a
+   ld (AttemptCounter),a
 Racetrack:
    call PrepareRace
    call GetReady
@@ -240,11 +242,11 @@ GetReady:
 -:
    halt
    push bc
-   call PSGFrame
+   call PSGSFXFrame
    pop bc
    djnz -
    ld hl,Engine2
-   call PSGPlay
+   call PSGSFXPlayLoop
    ret
 .ends
 ; ---------------------
@@ -348,11 +350,11 @@ PaletteTable:
 .section "Death" free
 Death:
    ld hl,Crash
-   call PSGPlayNoRepeat
+   call PSGSFXPlay
    ld b,DEATH_DELAY
  -:
    push bc
-   call PSGFrame
+   call PSGSFXFrame
    pop bc
    halt
    djnz -
@@ -385,7 +387,7 @@ PrepareRace:
    call SetRegister
    call InitializeGeneralVariables
    ld hl,Engine
-   call PSGPlayNoRepeat
+   call PSGSFXPlay
    call InitializeBackground
    call InitializeScore
    call InitializeSprites
@@ -462,6 +464,7 @@ MainLoop:
    call UpdateScoreBuffer
    call UpdateTodaysBestScoreBuffer
    call PSGFrame
+   call PSGSFXFrame
    jp MainLoop           ; Do it all again...
 ScrollRacetrack:
    ld a,(Scroll)
@@ -509,6 +512,8 @@ HandleBestScore:
    ret c
    ld a,FLAG_UP             ; Second digit is higher = best score is beaten!
    ld (NewBestScoreFlag),a
+   ld hl,NewBestScoreSFX
+   call PSGPlayNoRepeat
    ret
 AnimateCar:
    push hl               ; Save pointer to meta sprite data.
@@ -1014,6 +1019,9 @@ Engine2:
    .incbin "Race\Engine2.psg"
 Crash:
    .incbin "Race\Crash.psg"
+NewBestScoreSFX:
+   .incbin "Race\NewBestScore.psg"
+
 PlayerCel0:
    .db 0 0 0 0 16 16 16 16 ; Y-offset.
    .db 0 64 8 66 16 68 24 70 0 72 8 74 16 76 24 78 ; X-offset + char pairs.
