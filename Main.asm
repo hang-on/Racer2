@@ -210,6 +210,7 @@ ShowTitleScreen:
    call TitlescreenLoop
 Racetrack:
    call PrepareRace
+   call GetReady
    call MainLoop
    call Death
    ld a,(NewBestScoreFlag)
@@ -234,6 +235,12 @@ Racetrack:
    inc a
    ld (AttemptCounter),a
    jp Racetrack
+GetReady:
+   ld b,120
+-:
+   halt
+   djnz -
+   ret
 .ends
 ; ---------------------
 .section "Celebrate" free
@@ -371,7 +378,9 @@ PrepareRace:
    call InitializeScore
    call InitializeSprites
    call UpdateSATBuffers
+   call UpdateNameTableBuffers
    call LoadSAT          ; Load the sprite attrib. table from the buffers.
+   call LoadNameTable
    ld a,TURN_SCREEN_ON_TALL_SPRITES
    ld b,VDP_REGISTER_1
    call SetRegister
@@ -525,6 +534,10 @@ DetectCollision:
    ld a,FLAG_UP
    ld (CollisionFlag),a
    ret                   ; Return from main loop.
+UpdateNameTableBuffers:
+   call UpdateScoreBuffer
+   call UpdateTodaysBestScoreBuffer
+   ret
 UpdateScoreBuffer:
    ld a,(Score)
    add a,a
