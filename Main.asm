@@ -206,7 +206,19 @@ Racetrack:
    call PrepareRace
    call MainLoop
    call Death
-   ld a,(AttemptCounter)
+   ld a,(NewBestScoreFlag)
+   cp FLAG_UP
+   jp nz,+
+   call Celebrate
+   jp ShowTitleScreen
++:
+   ld a,(GameBeatenFlag)
+   cp FLAG_UP
+   jp nz,+
+   call Celebrate
+   jp ShowTitleScreen
++:
+   ld a,(AttemptCounter)  ; Are we out of attempts to beat todays hiscore?
    cp MAX_ATTEMPTS
    jp nz,+
    xor a
@@ -216,6 +228,35 @@ Racetrack:
    inc a
    ld (AttemptCounter),a
    jp Racetrack
+.ends
+; ---------------------
+.section "Celebrate" free
+Celebrate:
+   di
+   ld a,TURN_SCREEN_OFF
+   ld b,VDP_REGISTER_1
+   call SetRegister
+   ld hl,SAT_Y_TABLE
+   PrepareVram
+   ld c,VDP_DATA
+   ld a,SPRITE_TERMINATOR
+   out (c),a             ; Kill the sprites.
+   ld a,0
+   ld b,VDP_VERTICAL_SCROLL_REGISTER
+   call SetRegister
+   ld ix,CelebrationscreenImageData
+   call LoadImage
+   ld a,TURN_SCREEN_ON_TALL_SPRITES
+   ld b,VDP_REGISTER_1
+   call SetRegister
+   ei
+CelebrationLoop:
+   call WaitForFrameInterrupt
+   call Housekeeping
+   ld a,(Joystick1)
+   bit PLAYER1_START,a
+   ret z
+   jp CelebrationLoop
 .ends
 ; ---------------------
 .section "Titlescreen" free
@@ -315,7 +356,7 @@ InitializeGeneralVariables:
    ld (RandomSeed),a
    ld a,EASY_MODE
    ld (GameMode),a
-   ld hl,$0000
+   ld hl,$0000             ; Put a zero in both of the player's score digits.
    ld (Score),hl
    ret
 ; ---------------------
@@ -334,8 +375,7 @@ MainLoop:
    ld a,(GameBeatenFlag)
    cp FLAG_UP
    jp nz,+
-   neverend:
-   jp neverend           ; Placeholder for real celebration rotine.
+   ret z
 +:
    call HandleEnemyScript
    call HandleGameModeCounter
@@ -391,6 +431,7 @@ HandleBestScore:
    ld b,a
    ld a,(Score+1)
    cp b
+   ret z
    ret c
    ld a,FLAG_UP             ; Second digit is higher = best score is beaten!
    ld (NewBestScoreFlag),a
@@ -969,6 +1010,23 @@ TitlescreenImageData:
    .dw VISIBLE_PART_OF_SCREEN ; Amount of bytes to write to tilemap.
    .dw TitlescreenPalette ; Pointer to palette.
    .dw TitlescreenPaletteEnd-TitlescreenPalette ; Amount of colors.
+
+CelebrationscreenTiles:
+   .include "Celebrate\celebrate_tiles.inc"
+CelebrationscreenTilesEnd:
+CelebrationscreenTilemap:
+   .include "Celebrate\celebrate_tilemap.inc"
+CelebrationscreenPalette:
+   .include "Celebrate\celebrate_palette.inc"
+CelebrationscreenPaletteEnd:
+CelebrationscreenImageData:
+   .dw CelebrationscreenTiles  ; Pointer to tile data.
+   .dw CelebrationscreenTilesEnd-CelebrationscreenTiles ; Tile data (bytes) to write.
+   .dw CelebrationscreenTilemap ; Pointer to tilemap data.
+   .dw VISIBLE_PART_OF_SCREEN ; Amount of bytes to write to tilemap.
+   .dw CelebrationscreenPalette ; Pointer to palette.
+   .dw CelebrationscreenPaletteEnd-CelebrationscreenPalette ; Amount of colors.
+
 
 RegisterInitValues:
    .db %10000110         ; reg. 0, display and interrupt mode.
