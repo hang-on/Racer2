@@ -78,7 +78,7 @@
 .define    SCORE_LINE 135 ; when to score one point.
 .define    TODAYS_BEST_SCORE_INITIAL_VALUE $0001 ; = 10.
 .define    ORANGE $0b
-.define    WHITE $3f
+.define    WHITE $03 ; not actually white... pff..
 .define    DUMMY $23
 
 ; Player values
@@ -295,10 +295,10 @@ AnimateTitle:
    ld c,VDP_DATA
    ld d,0
    ld a,(Counter)
+   add a,64
+   ld (Counter),a
    cp 0
    call z,DoColorCycle
-   add a,16
-   ld (Counter),a
    ret
 DoColorCycle:
    ld a,(Cycle)
