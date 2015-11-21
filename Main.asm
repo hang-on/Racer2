@@ -236,10 +236,15 @@ Racetrack:
    ld (AttemptCounter),a
    jp Racetrack
 GetReady:
-   ld b,120
+   ld b,110
 -:
    halt
+   push bc
+   call PSGFrame
+   pop bc
    djnz -
+   ld hl,Engine2
+   call PSGPlay
    ret
 .ends
 ; ---------------------
@@ -342,8 +347,13 @@ PaletteTable:
 ; ---------------------
 .section "Death" free
 Death:
+   ld hl,Crash
+   call PSGPlayNoRepeat
    ld b,DEATH_DELAY
  -:
+   push bc
+   call PSGFrame
+   pop bc
    halt
    djnz -
    ld hl,Sprites_Palette
@@ -374,6 +384,8 @@ PrepareRace:
    ld b,VDP_REGISTER_1
    call SetRegister
    call InitializeGeneralVariables
+   ld hl,Engine
+   call PSGPlayNoRepeat
    call InitializeBackground
    call InitializeScore
    call InitializeSprites
@@ -449,6 +461,7 @@ MainLoop:
    call UpdateSATBuffers
    call UpdateScoreBuffer
    call UpdateTodaysBestScoreBuffer
+   call PSGFrame
    jp MainLoop           ; Do it all again...
 ScrollRacetrack:
    ld a,(Scroll)
@@ -995,6 +1008,12 @@ LoadNameTable:
 .ends
 ; ---------------------
 .section "Data" free
+Engine:
+   .incbin "Race\Engine.psg"
+Engine2:
+   .incbin "Race\Engine2.psg"
+Crash:
+   .incbin "Race\Crash.psg"
 PlayerCel0:
    .db 0 0 0 0 16 16 16 16 ; Y-offset.
    .db 0 64 8 66 16 68 24 70 0 72 8 74 16 76 24 78 ; X-offset + char pairs.
