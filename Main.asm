@@ -36,6 +36,7 @@
 .define    STACK_INIT_ADDRESS $dff0
 .define    PAUSE_INTERRUPT_ADDRESS $0066
 .define    DEATH_DELAY 100
+.define    MAX_ATTEMPTS 2 ; 0-2 = 3
 
 .define    SPRITE_COLLISION_BIT 5
 .define    VDP_CONTROL $bf
@@ -56,6 +57,7 @@
 .define    TODAYS_BEST_SCORE_DIGIT_1_ADDRESS $3a76
 .define    SAT_Y_TABLE $3f00
 .define    SAT_XC_TABLE $3f80
+.define    SPRITE_TERMINATOR $d0
 
 .define    ONE_FULL_PALETTE 16
 .define    TURN_SCREEN_OFF %10000000
@@ -82,7 +84,7 @@
 .define    PLAYER_Y_START 135
 .define    FIRST_PLAYER_TILE $2800
 .define    PLAYER_METASPRITE_SIZE 32*32
-.define    PLAYER_HITCOUNTER_MAX 2
+.define    PLAYER_HITCOUNTER_MAX 1
 ; Enemy values
 .define    ASH_X_START 76
 .define    ASH_Y_START 1
@@ -146,7 +148,7 @@
    EnemyScript db
    GameModeCounter dw
    GameMode db
-   ScoreTimer db
+   AttemptCounter db
 .ends
 
 ; =============================================================================
@@ -189,20 +191,45 @@
 .section "Control" free
 Control:
    call InitializeFramework
-   ; call LoadTitleScreen
-   ; call TitlescreenLoop
-Restart:
+ShowTitleScreen:
+   di
+   ld a,TURN_SCREEN_OFF
+   ld b,VDP_REGISTER_1
+   call SetRegister
+   call LoadTitleScreen
+   ld a,TURN_SCREEN_ON_TALL_SPRITES
+   ld b,VDP_REGISTER_1
+   call SetRegister
+   ei
+   call TitlescreenLoop
+Racetrack:
    call PrepareRace
    call MainLoop
    call Death
-   jp Restart
+   ld a,(AttemptCounter)
+   cp MAX_ATTEMPTS
+   jp nz,+
+   xor a
+   ld (AttemptCounter),a
+   jp ShowTitleScreen
++:
+   inc a
+   ld (AttemptCounter),a
+   jp Racetrack
 .ends
 ; ---------------------
 .section "Titlescreen" free
 LoadTitleScreen:
+   ld hl,SAT_Y_TABLE
+   PrepareVram
+   ld c,VDP_DATA
+   ld a,SPRITE_TERMINATOR
+   out (c),a             ; Kill the sprites.
+   ld a,0
+   ld b,VDP_VERTICAL_SCROLL_REGISTER
+   call SetRegister
    ld ix,TitlescreenImageData
    call LoadImage
-   ei
    ret
 TitlescreenLoop:
    call WaitForFrameInterrupt
@@ -250,6 +277,7 @@ PrepareRace:
    call InitializeBackground
    call InitializeScore
    call InitializeSprites
+   call UpdateSATBuffers
    call LoadSAT          ; Load the sprite attrib. table from the buffers.
    ld a,TURN_SCREEN_ON_TALL_SPRITES
    ld b,VDP_REGISTER_1
