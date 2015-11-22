@@ -352,9 +352,13 @@ PaletteTable:
 ; ---------------------
 .section "Death" free
 Death:
+   ld a,(GameBeatenFlag)
+   cp FLAG_UP
+   jp z,+                ; Don't play crash sound if player beats the game!
    ld hl,Crash
    call PSGSFXPlay
    ld b,DEATH_DELAY
++:
  -:
    push bc
    call PSGSFXFrame
@@ -389,6 +393,7 @@ PrepareRace:
    ld b,VDP_REGISTER_1
    call SetRegister
    call InitializeGeneralVariables
+   call PSGStop
    ld hl,Engine
    call PSGSFXPlay
    call InitializeBackground
