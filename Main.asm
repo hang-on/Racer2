@@ -78,7 +78,7 @@
 .define    FLAG_UP 1
 .define    FLAG_DOWN 0
 .define    SCORE_LINE 135 ; when to score one point.
-.define    TODAYS_BEST_SCORE_INITIAL_VALUE $0002 ; = 10.
+.define    TODAYS_BEST_SCORE_INITIAL_VALUE $0901 ; = 19.
 .define    ORANGE $0b
 .define    WHITE $03 ; not actually white... pff..
 .define    DUMMY $23
@@ -462,13 +462,14 @@ MainLoop:
    call DetectCollision  ; Set CollisionFlag if two hardware sprites overlap.
    ld a,(CollisionFlag)  ; Respond to collision flag.
    cp FLAG_UP            ; Return to control loop.
-   ret z   
+   ret z
    call LoadSAT
    ld a,(Scroll)
    ld b,VDP_VERTICAL_SCROLL_REGISTER
    call SetRegister
    call LoadNameTable
    call Housekeeping
+   call HandleBestScore
    ld a,(GameBeatenFlag)
    cp FLAG_UP
    jp nz,+
@@ -481,7 +482,6 @@ MainLoop:
    call ScrollRacetrack  ; Not the actual vdp register updating - see above.
    call AnimatePlayer
    call AnimateEnemies
-   call HandleBestScore
    call UpdateSATBuffers
    call UpdateScoreBuffer
    call UpdateTodaysBestScoreBuffer
@@ -520,18 +520,22 @@ HandleBestScore:
    ldi
    ret
 +:
+debug:
    ; See if flag should go up...
    ld a,(TodaysBestScore)
    ld b,a
    ld a,(Score)
-   cp b
+   sub b
    ret c
+   cp 1
+   jp z,+
    ld a,(TodaysBestScore+1) ; First digit is equal or higher...
    ld b,a
    ld a,(Score+1)
    cp b
    ret z
    ret c
++:
    ld a,FLAG_UP             ; Second digit is higher = best score is beaten!
    ld (NewBestScoreFlag),a
    ld hl,NewBestScoreSFX
