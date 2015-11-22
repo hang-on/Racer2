@@ -63,6 +63,8 @@
 .define    TURN_SCREEN_OFF %10000000
 .define    TURN_SCREEN_ON_TALL_SPRITES %11100010
 .define    VDP_REGISTER_1 1
+.define    VDP_REGISTER_7 7
+.define    SPRITE_COLOR_1 1
 .define    VDP_VERTICAL_SCROLL_REGISTER 9
 .define    PLAYER1_JOYSTICK_RIGHT 3
 .define    PLAYER1_JOYSTICK_LEFT 2
@@ -412,6 +414,9 @@ PrepareRace:
    call UpdateNameTableBuffers
    call LoadSAT          ; Load the sprite attrib. table from the buffers.
    call LoadNameTable
+   ld a,SPRITE_COLOR_1   ; Color the border
+   ld b,VDP_REGISTER_7
+   call SetRegister
    ld a,TURN_SCREEN_ON_TALL_SPRITES
    ld b,VDP_REGISTER_1
    call SetRegister
