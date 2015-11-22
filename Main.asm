@@ -88,7 +88,7 @@
 .define    PLAYER_Y_START 135
 .define    FIRST_PLAYER_TILE $2800
 .define    PLAYER_METASPRITE_SIZE 32*32
-.define    PLAYER_HITCOUNTER_MAX 3
+.define    PLAYER_HITCOUNTER_MAX 4
 ; Enemy values
 .define    ASH_X_START 76
 .define    ASH_Y_START 1
@@ -360,8 +360,8 @@ Death:
    jp z,+                ; Don't play crash sound if player beats the game!
    ld hl,Crash
    call PSGSFXPlay
-   ld b,DEATH_DELAY
 +:
+   ld b,DEATH_DELAY
  -:
    push bc
    call PSGSFXFrame
@@ -448,16 +448,16 @@ InitializeGeneralVariables:
 ; ---------------------
 MainLoop:
    call WaitForFrameInterrupt
+   call DetectCollision  ; Set CollisionFlag if two hardware sprites overlap.
+   ld a,(CollisionFlag)  ; Respond to collision flag.
+   cp FLAG_UP            ; Return to control loop.
+   ret z   
    call LoadSAT
    ld a,(Scroll)
    ld b,VDP_VERTICAL_SCROLL_REGISTER
    call SetRegister
    call LoadNameTable
    call Housekeeping
-   call DetectCollision  ; Set CollisionFlag if two hardware sprites overlap.
-   ld a,(CollisionFlag)  ; Respond to collision flag.
-   cp FLAG_UP            ; Return to control loop.
-   ret z
    ld a,(GameBeatenFlag)
    cp FLAG_UP
    jp nz,+
