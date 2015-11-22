@@ -88,7 +88,7 @@
 .define    PLAYER_Y_START 135
 .define    FIRST_PLAYER_TILE $2800
 .define    PLAYER_METASPRITE_SIZE 32*32
-.define    PLAYER_HITCOUNTER_MAX 1
+.define    PLAYER_HITCOUNTER_MAX 3
 ; Enemy values
 .define    ASH_X_START 76
 .define    ASH_Y_START 1
@@ -271,9 +271,12 @@ Celebrate:
    ld a,TURN_SCREEN_ON_TALL_SPRITES
    ld b,VDP_REGISTER_1
    call SetRegister
+   ld hl,CelebrateSound
+   call PSGPlayNoRepeat
    ei
 CelebrationLoop:
    call WaitForFrameInterrupt
+   call PSGFrame
    call Housekeeping
    ld a,(Joystick1)
    bit PLAYER1_START,a
@@ -1031,6 +1034,8 @@ NewBestScoreSFX:
    .incbin "Race\NewBestScore.psg"
 Intro:
    .incbin "Race\Intro.psg"
+CelebrateSound:
+   .incbin "Race\Celebrate.psg"
 
 PlayerCel0:
    .db 0 0 0 0 16 16 16 16 ; Y-offset.
