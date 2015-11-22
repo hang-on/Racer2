@@ -76,7 +76,7 @@
 .define    FLAG_UP 1
 .define    FLAG_DOWN 0
 .define    SCORE_LINE 135 ; when to score one point.
-.define    TODAYS_BEST_SCORE_INITIAL_VALUE $0001 ; = 10.
+.define    TODAYS_BEST_SCORE_INITIAL_VALUE $0002 ; = 10.
 .define    ORANGE $0b
 .define    WHITE $03 ; not actually white... pff..
 .define    DUMMY $23
@@ -200,7 +200,7 @@ Control:
 ShowTitleScreen:
    di
    call PSGSFXStop
-   call PSGStop   
+   call PSGStop
    ld a,TURN_SCREEN_OFF
    ld b,VDP_REGISTER_1
    call SetRegister
