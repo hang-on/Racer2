@@ -240,6 +240,8 @@ Racetrack:
    ld (AttemptCounter),a
    jp Racetrack
 GetReady:
+   ld hl,Engine
+   call PSGSFXPlay
    ld b,110
 -:
    halt
@@ -358,13 +360,14 @@ Death:
    ld a,(GameBeatenFlag)
    cp FLAG_UP
    jp z,+                ; Don't play crash sound if player beats the game!
+   call PSGSFXStop
    ld hl,Crash
-   call PSGSFXPlay
+   call PSGPlayNoRepeat
 +:
    ld b,DEATH_DELAY
  -:
    push bc
-   call PSGSFXFrame
+   call PSGFrame
    pop bc
    halt
    djnz -
@@ -397,8 +400,7 @@ PrepareRace:
    call SetRegister
    call InitializeGeneralVariables
    call PSGStop
-   ld hl,Engine
-   call PSGSFXPlay
+   call PSGSFXStop
    call InitializeBackground
    call InitializeScore
    call InitializeSprites
