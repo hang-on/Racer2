@@ -199,6 +199,8 @@ Control:
    call InitializeFramework
 ShowTitleScreen:
    di
+   call PSGSFXStop
+   call PSGStop   
    ld a,TURN_SCREEN_OFF
    ld b,VDP_REGISTER_1
    call SetRegister
@@ -273,6 +275,8 @@ Celebrate:
    ld a,TURN_SCREEN_ON_TALL_SPRITES
    ld b,VDP_REGISTER_1
    call SetRegister
+   call PSGSFXStop
+   call PSGStop
    ld hl,CelebrateSound
    call PSGPlayNoRepeat
    ei
