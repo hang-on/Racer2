@@ -148,7 +148,6 @@
    Ash INSTANCEOF EnemyObject ; The three enemy cars...
    May INSTANCEOF EnemyObject
    Iris INSTANCEOF EnemyObject
-   EnemyScript db        ; Controls when each enemy 
    GameModeCounter dw
    GameMode db
    AttemptCounter db
@@ -472,7 +471,6 @@ MainLoop:
    jp nz,+
    ret z
 +:
-   call HandleEnemyScript
    call HandleGameModeCounter
    call MovePlayer
    call MoveEnemies
@@ -761,41 +759,9 @@ InitializeEnemies:
    ld (Iris.metasprite),hl
    ld a,3
    ld (Iris.index),a
-   ld a,255
-   ld (EnemyScript),a
    xor a
    ld (Ash.status),a
    ld (May.status),a
-   ld (Iris.status),a
-   ret
-HandleEnemyScript:
-   ld a,(EnemyScript)
-   cp 0
-   ret z
-   dec a
-   ld (EnemyScript),a
-   ld a,(EnemyScript)
-   cp 150
-   jp nz,+
-   ld hl,GreenCarCel0
-   ld (Ash.metasprite),hl
-   ld a,ENABLED
-   ld (Ash.status),a
-   ret
-+:
-   cp 201
-   jp nz,+
-   ld hl,GreenCarCel0
-   ld (May.metasprite),hl
-   ld a,ENABLED
-   ld (May.status),a
-   ret
-+:
-   cp 100
-   ret nz
-   ld hl,GreenCarCel0
-   ld (Iris.metasprite),hl
-   ld a,ENABLED
    ld (Iris.status),a
    ret
 MoveEnemies:
