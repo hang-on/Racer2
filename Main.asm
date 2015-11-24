@@ -148,11 +148,11 @@
    Ash INSTANCEOF EnemyObject ; The three enemy cars...
    May INSTANCEOF EnemyObject
    Iris INSTANCEOF EnemyObject
-   GameModeCounter dw
-   GameMode db
-   AttemptCounter db
-   Cycle db
-   Counter db
+   GameModeCounter dw    ; Counting up to the hard mode threshold.
+   GameMode db           ; Is it easy or hard? (% enemies w. horiz. move).
+   AttemptCounter db     ; Number of attempts before going back to title.
+   Cycle db              ; Used by the color cycle routine at the title.
+   Counter db            ; Used for title animation.
 .ends
 
 ; =============================================================================
@@ -192,23 +192,11 @@
 .org PAUSE_INTERRUPT_ADDRESS
    retn
 ; ---------------------
-.section "Control" free
+.section "Main control structure" free
 Control:
    call InitializeFramework
 ShowTitleScreen:
-   di
-   call PSGSFXStop
-   call PSGStop
-   ld a,TURN_SCREEN_OFF
-   ld b,VDP_REGISTER_1
-   call SetRegister
-   call LoadTitleScreen
-   ld a,TURN_SCREEN_ON_TALL_SPRITES
-   ld b,VDP_REGISTER_1
-   call SetRegister
-   ld hl,Intro
-   call PSGPlayNoRepeat
-   ei
+   call PrepareTitlescreen
    call TitlescreenLoop
    xor a
    ld (AttemptCounter),a
@@ -217,27 +205,27 @@ Racetrack:
    call GetReady
    call MainLoop
    call Death
-   ld a,(NewBestScoreFlag)
+   ld a,(NewBestScoreFlag) ; Is today's best score beaten?
    cp FLAG_UP
    jp nz,+
-   call Celebrate
+   call Celebrate        ; Show celeb screen before going back to title.
    jp ShowTitleScreen
 +:
-   ld a,(GameBeatenFlag)
+   ld a,(GameBeatenFlag) ; Is the game beaten (score = 100)?
    cp FLAG_UP
    jp nz,+
-   call Celebrate
+   call Celebrate        ; This calls for celebration...
    jp ShowTitleScreen
 +:
-   ld a,(AttemptCounter)  ; Are we out of attempts to beat todays hiscore?
+   ld a,(AttemptCounter) ; Are we out of attempts to beat todays hiscore?
    cp MAX_ATTEMPTS
    jp nz,+
    xor a
    ld (AttemptCounter),a
    jp ShowTitleScreen
 +:
-   inc a
-   ld (AttemptCounter),a
+   inc a                 ; If none of the above, fall through to here and
+   ld (AttemptCounter),a ; have another go at the race track.
    jp Racetrack
 GetReady:
    ld hl,Engine
@@ -289,6 +277,21 @@ CelebrationLoop:
 .ends
 ; ---------------------
 .section "Titlescreen" free
+PrepareTitlescreen:
+   di
+   call PSGSFXStop
+   call PSGStop
+   ld a,TURN_SCREEN_OFF
+   ld b,VDP_REGISTER_1
+   call SetRegister
+   call LoadTitleScreen
+   ld a,TURN_SCREEN_ON_TALL_SPRITES
+   ld b,VDP_REGISTER_1
+   call SetRegister
+   ld hl,Intro
+   call PSGPlayNoRepeat
+   ei
+   ret
 LoadTitleScreen:
    ld hl,SAT_Y_TABLE
    PrepareVram
