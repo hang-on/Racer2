@@ -1,6 +1,5 @@
-;
 ; *** R A C E R ***
-; Setup the SDSC tag, including correct chekcsum:
+; Setup the SDSC tag:
 .sdsctag 2.0, "Racer - rebooted", ReleaseNotes, "Anders S. Jensen"
 .memorymap
    defaultslot 0
@@ -31,25 +30,20 @@
 ; =============================================================================
 ; C O N S T A N T S
 ; =============================================================================
+; VDP-related constants
+.define    PALETTE_ADDRESS $c000 ; Bank 1 address.
+.define    PALETTE_BANK_2 $c010 ; Bank 2 address.
 .define    SPRITE_PALETTE_SIZE 16
+.define    ONE_FULL_PALETTE 16
 .define    START_OF_SPRITE_PALETTE 16
-.define    STACK_INIT_ADDRESS $dff0
-.define    PAUSE_INTERRUPT_ADDRESS $0066
-.define    DEATH_DELAY 100
-.define    MAX_ATTEMPTS 2 ; 0-2 = 3
-
 .define    SPRITE_COLLISION_BIT 5
 .define    VDP_CONTROL $bf
 .define    VDP_DATA $be
 .define    VDP_INTERRUPT_ADDRESS $0038
 .define    ALL_VDP_REGISTERS 11
 .define    VDP_WRITE_REGISTER_COMMAND $80
-
-; Vram map:
 .define    ADDRESS_OF_FIRST_TILE $0000
 .define    TILEMAP_ADDRESS $3800
-.define    PALETTE_ADDRESS $c000 ; Bank 1 address.
-.define    PALETTE_BANK_2 $c010 ; Bank 2 address.
 .define    SCORE_TILE_OFFSET 34 ; Used in the update score routine.
 .define    SCORE_DIGITS_TILE_ADDRESS 34*32 ; racetrack is currently 34 tiles...
 .define    SCORE_DIGITS_TILE_AMOUNT 20*32
@@ -58,34 +52,20 @@
 .define    SAT_Y_TABLE $3f00
 .define    SAT_XC_TABLE $3f80
 .define    SPRITE_TERMINATOR $d0
-
-.define    ONE_FULL_PALETTE 16
 .define    TURN_SCREEN_OFF %10000000
 .define    TURN_SCREEN_ON_TALL_SPRITES %11100010
 .define    VDP_REGISTER_1 1
 .define    VDP_REGISTER_7 7
 .define    SPRITE_COLOR_1 1
 .define    VDP_VERTICAL_SCROLL_REGISTER 9
-.define    PLAYER1_JOYSTICK_RIGHT 3
-.define    PLAYER1_JOYSTICK_LEFT 2
-.define    PLAYER1_START 4
 .define    WHOLE_NAMETABLE 32*28*2
 .define    VISIBLE_PART_OF_SCREEN 32*24*2
-.define    BOTTOM_BORDER 193
-.define    RIGHT_BORDER 156
-.define    LEFT_BORDER 5
-.define    MAX_CELS 2    ; Number of cels in a car's animation sequence.
-.define    FLAG_UP 1
-.define    FLAG_DOWN 0
-.define    SCORE_LINE 135 ; when to score one point.
-.define    TODAYS_BEST_SCORE_INITIAL_VALUE $0901 ; = 19.
 .define    ORANGE $0b
 .define    WHITE $03 ; not actually white... pff..
 .define    DUMMY $23
-
 ; Player values
 .define    PLAYER_VERTICAL_SPEED 6
-.define    PLAYER_HORIZONTAL_SPEED 2 ; could also be 3 ...?!
+.define    PLAYER_HORIZONTAL_SPEED 2 ;
 .define    PLAYER_X_START 110
 .define    PLAYER_Y_START 135
 .define    FIRST_PLAYER_TILE $2800
@@ -110,12 +90,29 @@
 .define    EASY_MODE_MASK %00000111 ; Too easy/hard?!
 .define    HARD_MODE_MASK %00000011
 .define    HARD_MODE_THRESHOLD 3
+; Misc
+.define    STACK_INIT_ADDRESS $dff0
+.define    PAUSE_INTERRUPT_ADDRESS $0066
+.define    DEATH_DELAY 100
+.define    MAX_ATTEMPTS 2 ; 0-2 = 3
+.define    PLAYER1_JOYSTICK_RIGHT 3
+.define    PLAYER1_JOYSTICK_LEFT 2
+.define    PLAYER1_START 4
+.define    BOTTOM_BORDER 193
+.define    RIGHT_BORDER 156
+.define    LEFT_BORDER 5
+.define    MAX_CELS 2    ; Number of cels in a car's animation sequence.
+.define    FLAG_UP 1
+.define    FLAG_DOWN 0
+.define    SCORE_LINE 135 ; When to score one point.
+.define    TODAYS_BEST_SCORE_INITIAL_VALUE $0901 ; = 19.
 .define    EASY_MODE 0
 .define    HARD_MODE 1
 .define    DISABLED 0
 .define    ENABLED 1
+
 .struct EnemyObject
-   y db                  ; 0
+   y db                  ; 0 (ix+0)...
    x db                  ; 1
    metasprite dw         ; 2
    cel db                ; 4
@@ -127,31 +124,31 @@
 ; V A R I A B L E S
 ; =============================================================================
 .ramsection "Game variables" slot 1
-   VDPStatus db
-   FrameCounter db
+   VDPStatus db          ; Gets updated by the frame int. handler.
+   FrameCounter db       ; Part of housekeeping.
    Joystick1 db          ; For input from the joystick ports
    Joystick2 db          ; (via the ReadJoysticks function).
-   SpriteBufferY dsb 64
-   SpriteBufferXC dsb 128
-   ScoreBuffer dsb 8
-   TodaysBestScoreBuffer dsb 8
-   Score dw
-   TodaysBestScore dw
-   NewBestScoreFlag db
+   SpriteBufferY dsb 64  ; The 64 y-positions.
+   SpriteBufferXC dsb 128 ; The 64 x-position + character code pairs.
+   ScoreBuffer dsb 8     ; Two score digits take up 4 name table words.
+   TodaysBestScoreBuffer dsb 8 ; Same with todays best score...
+   Score dw              ; Two bytes, one for each digit.
+   TodaysBestScore dw    ; The same...
+   NewBestScoreFlag db   ; Is the current score todays best score?
    Scroll db             ; Vertical scroll register mirror.
-   CollisionFlag db
+   CollisionFlag db      ; Collision occured.
    GameBeatenFlag db     ; Is the score overflowing from 99?
-   RandomSeed dw
-   PlayerY db
-   PlayerX db
+   RandomSeed dw         ; For the randomize routine.
+   PlayerY db            ; Player's y-position (metasprite).
+   PlayerX db            ; Players x-position (metasprite).
    PlayerMetaSpriteDataPointer dw ; Pointer to metasprite data.
-   PlayerCel db
-   PlayerIndex db
-   PlayerHitCounter db
-   Ash INSTANCEOF EnemyObject
+   PlayerCel db          ; Whih animation cel is currently playing?
+   PlayerIndex db        ; Which SAT buffer slot does the player occupy?
+   PlayerHitCounter db   ; Player can slightly touch the enemies...
+   Ash INSTANCEOF EnemyObject ; The three enemy cars...
    May INSTANCEOF EnemyObject
    Iris INSTANCEOF EnemyObject
-   EnemyScript db
+   EnemyScript db        ; Controls when each enemy 
    GameModeCounter dw
    GameMode db
    AttemptCounter db
