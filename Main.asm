@@ -94,6 +94,7 @@
 .define    STACK_INIT_ADDRESS $dff0
 .define    PAUSE_INTERRUPT_ADDRESS $0066
 .define    DEATH_DELAY 100
+.define    GET_READY_DELAY 110
 .define    MAX_ATTEMPTS 2 ; 0-2 = 3
 .define    PLAYER1_JOYSTICK_RIGHT 3
 .define    PLAYER1_JOYSTICK_LEFT 2
@@ -227,10 +228,10 @@ Racetrack:
    inc a                 ; If none of the above, fall through to here and
    ld (AttemptCounter),a ; have another go at the race track.
    jp Racetrack
-GetReady:
+GetReady:                ; Wait a little before the action starts.
    ld hl,Engine
-   call PSGSFXPlay
-   ld b,110
+   call PSGSFXPlay       ; Play the hrmmm.. hrm.... hrrrrmmmm. sound.
+   ld b,GET_READY_DELAY
 -:
    halt
    push bc
