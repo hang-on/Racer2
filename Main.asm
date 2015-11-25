@@ -228,53 +228,6 @@ Racetrack:
    inc a                 ; If none of the above, fall through to here and
    ld (AttemptCounter),a ; have another go at the race track.
    jp Racetrack
-GetReady:                ; Wait a little before the action starts.
-   ld hl,Engine
-   call PSGSFXPlay       ; Play the hrmmm.. hrm.... hrrrrmmmm. sound.
-   ld b,GET_READY_DELAY
--:
-   halt
-   push bc
-   call PSGSFXFrame
-   pop bc
-   djnz -
-   ld hl,Engine2
-   call PSGSFXPlayLoop
-   ret
-.ends
-; ---------------------
-.section "Celebrate" free
-Celebrate:
-   di
-   ld a,TURN_SCREEN_OFF
-   ld b,VDP_REGISTER_1
-   call SetRegister
-   ld hl,SAT_Y_TABLE
-   PrepareVram
-   ld c,VDP_DATA
-   ld a,SPRITE_TERMINATOR
-   out (c),a             ; Kill the sprites.
-   ld a,0
-   ld b,VDP_VERTICAL_SCROLL_REGISTER
-   call SetRegister
-   ld ix,CelebrationscreenImageData
-   call LoadImage
-   ld a,TURN_SCREEN_ON_TALL_SPRITES
-   ld b,VDP_REGISTER_1
-   call SetRegister
-   call PSGSFXStop
-   call PSGStop
-   ld hl,CelebrateSound
-   call PSGPlayNoRepeat
-   ei
-CelebrationLoop:
-   call WaitForFrameInterrupt
-   call PSGFrame
-   call Housekeeping
-   ld a,(Joystick1)
-   bit PLAYER1_START,a
-   ret z
-   jp CelebrationLoop
 .ends
 ; ---------------------
 .section "Titlescreen" free
@@ -315,50 +268,36 @@ TitlescreenLoop:
    ret z
    jp TitlescreenLoop
 AnimateTitle:
-   ld c,VDP_CONTROL
-   ld a,$06
-   out (c),a
-   or %11000000
-   out (c),a
-   ld c,VDP_DATA
-   ld d,0
-   ld a,(Counter)
+   ld a,(Counter)        ; Is it time for a color cycle...?
    add a,64
    ld (Counter),a
    cp 0
    call z,DoColorCycle
    ret
 DoColorCycle:
+   ld c,VDP_CONTROL      ; Prepare vram at the correct color in the palette.
+   ld a,$06
+   out (c),a
+   or %11000000
+   out (c),a
+   ld c,VDP_DATA
+   ld d,0
    ld a,(Cycle)
    inc a
-   cp 6
+   cp 6                  ; Each letter + one all orange.
    jp nz,+
    xor a
 +:
    ld (Cycle),a
    add a,a
    add a,a
-   add a,a ; times 8
-   ld e,a
+   add a,a               ; Cycle counter times 8,
+   ld e,a                ; - it's an 8 byte element table here!
    ld hl,PaletteTable
-   add hl,de
-   outi
-   outi
-   outi
-   outi
-   outi
-   outi
-   outi
-   outi
+   add hl,de             ; Apply the offset.
+   Outi_x4
+   Outi_x4
    ret
-PaletteTable:
-   .db ORANGE ORANGE ORANGE ORANGE ORANGE DUMMY DUMMY DUMMY
-   .db WHITE ORANGE ORANGE ORANGE ORANGE DUMMY DUMMY DUMMY
-   .db ORANGE WHITE ORANGE ORANGE ORANGE DUMMY DUMMY DUMMY
-   .db ORANGE ORANGE WHITE ORANGE ORANGE DUMMY DUMMY DUMMY
-   .db ORANGE ORANGE ORANGE WHITE ORANGE DUMMY DUMMY DUMMY
-   .db ORANGE ORANGE ORANGE ORANGE WHITE DUMMY DUMMY DUMMY
-
 .ends
 ; ---------------------
 .section "Death" free
@@ -423,6 +362,19 @@ PrepareRace:
    ei
    halt                  ; Make sure yo don't die right when race restarts.
    halt
+   ret
+GetReady:                ; Wait a little before the action starts.
+   ld hl,Engine
+   call PSGSFXPlay       ; Play the hrmmm.. hrm.... hrrrrmmmm. sound.
+   ld b,GET_READY_DELAY
+-:
+   halt
+   push bc
+   call PSGSFXFrame      ; Wait while the sound effects plays.
+   pop bc
+   djnz -
+   ld hl,Engine2         ; Shift to regular low-pitch motor sound.
+   call PSGSFXPlayLoop
    ret
 InitializeScore:
    ld hl,SCORE_DIGITS_TILE_ADDRESS
@@ -921,6 +873,41 @@ AnimateEnemies:
    ret
 .ends
 ; ---------------------
+.section "Celebrate" free
+Celebrate:
+   di
+   ld a,TURN_SCREEN_OFF
+   ld b,VDP_REGISTER_1
+   call SetRegister
+   ld hl,SAT_Y_TABLE
+   PrepareVram
+   ld c,VDP_DATA
+   ld a,SPRITE_TERMINATOR
+   out (c),a             ; Kill the sprites.
+   ld a,0
+   ld b,VDP_VERTICAL_SCROLL_REGISTER
+   call SetRegister
+   ld ix,CelebrationscreenImageData
+   call LoadImage
+   ld a,TURN_SCREEN_ON_TALL_SPRITES
+   ld b,VDP_REGISTER_1
+   call SetRegister
+   call PSGSFXStop
+   call PSGStop
+   ld hl,CelebrateSound
+   call PSGPlayNoRepeat
+   ei
+CelebrationLoop:
+   call WaitForFrameInterrupt
+   call PSGFrame
+   call Housekeeping
+   ld a,(Joystick1)
+   bit PLAYER1_START,a
+   ret z
+   jp CelebrationLoop
+.ends
+
+; ---------------------
 .section "Misc functions" free
 Housekeeping:
    call ReadJoysticks
@@ -1018,6 +1005,14 @@ Intro:
    .incbin "Race\Intro.psg"
 CelebrateSound:
    .incbin "Race\Celebrate.psg"
+
+PaletteTable:
+   .db ORANGE ORANGE ORANGE ORANGE ORANGE DUMMY DUMMY DUMMY
+   .db WHITE ORANGE ORANGE ORANGE ORANGE DUMMY DUMMY DUMMY
+   .db ORANGE WHITE ORANGE ORANGE ORANGE DUMMY DUMMY DUMMY
+   .db ORANGE ORANGE WHITE ORANGE ORANGE DUMMY DUMMY DUMMY
+   .db ORANGE ORANGE ORANGE WHITE ORANGE DUMMY DUMMY DUMMY
+   .db ORANGE ORANGE ORANGE ORANGE WHITE DUMMY DUMMY DUMMY
 
 PlayerCel0:
    .db 0 0 0 0 16 16 16 16 ; Y-offset.
